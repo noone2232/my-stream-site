@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DesiTube - Watch Trending Videos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .video-card:hover { transform: translateY(-4px); transition: all 0.2s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-950 text-white font-sans min-h-screen">
+
+    <!-- Header / Navbar -->
+    <header class="flex justify-between items-center px-4 md:px-8 py-3 bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
+        <div class="flex items-center space-x-2 cursor-pointer" onclick="window.location.reload()">
+            <i class="fa-brands fa-youtube text-red-600 text-3xl md:text-4xl"></i>
+            <span class="text-xl md:text-2xl font-bold tracking-tight">Desi<span class="text-red-500">Tube</span></span>
+        </div>
+        <div class="w-1/2 md:w-1/3">
+            <input type="text" id="search-input" onkeyup="searchVideos()" placeholder="Search videos..." class="w-full bg-gray-800 text-sm rounded-full py-2 px-4 border border-gray-700 focus:outline-none focus:border-red-500">
+        </div>
+    </header>
+
+    <!-- Main Container (YouTube Style Video Grid) -->
+    <main class="max-w-7xl mx-auto p-4 md:p-6">
+        
+        <!-- Video Grid Feed -->
+        <div id="video-feed" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Videos and Interstitial Ads will be dynamically loaded here -->
+        </div>
+
+        <div id="loading-spinner" class="text-center py-10 text-gray-400">
+            <i class="fa-solid fa-spinner fa-spin text-3xl mb-2 text-red-500"></i>
+            <p>Loading videos...</p>
+        </div>
+    </main>
+
+    <!-- Video Modal Player (Pop-up Player on Video Click) -->
+    <div id="player-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex justify-center items-center p-2 md:p-4">
+        <div class="bg-gray-900 w-full max-w-4xl rounded-2xl overflow-hidden border border-gray-800 shadow-2xl relative flex flex-col">
+            
+            <!-- Modal Header / Close Button -->
+            <div class="flex justify-between items-center p-3 border-b border-gray-800 bg-gray-900">
+                <h3 id="modal-video-title" class="text-sm md:text-base font-semibold truncate pr-4 text-gray-200">Video Player</h3>
+                <button onclick="closePlayer()" class="text-gray-400 hover:text-white bg-gray-800 hover:bg-red-600 w-8 h-8 rounded-full flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Player Box with 2-Click Unlock System -->
+            <div class="relative w-full aspect-video bg-black">
+                
+                <!-- 2-Click Unlock Overlay -->
+                <div id="unlock-overlay" class="absolute inset-0 bg-black/95 z-20 flex flex-col items-center justify-center text-center p-4">
+                    <i class="fa-solid fa-lock text-red-500 text-4xl md:text-5xl mb-3 animate-bounce"></i>
+                    <h2 class="text-lg md:text-xl font-bold mb-1">ভিডিওটি প্লে করতে আনলক করুন</h2>
+                    <p class="text-gray-400 text-xs md:text-sm mb-5">নিচের বাটনে ২টি ক্লিক সম্পন্ন করে ভিডিও চালু করুন</p>
+                    
+                    <button id="unlock-btn" onclick="handleUnlock()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition">
+                        <span id="btn-text">Unlock Video (Step 1/2)</span>
+                    </button>
+                </div>
+
+                <!-- Embed Player (Streamtape / Doodstream) -->
+                <iframe id="modal-iframe" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+            </div>
+
+            <!-- Modal Footer (Download Button & Extra Link) -->
+            <div class="p-3 bg-gray-900 border-t border-gray-800 flex justify-between items-center">
+                <span class="text-xs text-gray-400">DesiTube Video Player</span>
+                <a id="modal-download-btn" href="#" target="_blank" class="bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition">
+                    <i class="fa-solid fa-download"></i> Fast Download (HD)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Engine -->
+    <script>
+        // --- ⚙️ CONFIGURATION (আপনার আসল তথ্যগুলো এখানে বসাবেন) ---
+        const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0"; // আপনার anon public key বসান
+        const ADSTERRA_DIRECT_LINK = "https://consistinvention.com/tvprnh1m8?key=04e934389df942532a60c6b975af665a"; // আপনার Adsterra Direct Link বসান
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let allVideosData = [];
+        let unlockClickCount = 0;
+        let currentVideoDownloadLink = "";
+
+        // Fetch All Videos from Supabase Database
+        async function fetchVideos() {
+            const spinner = document.getElementById('loading-spinner');
+            const { data, error } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });
+
+            if (error) {
+                console.error("Database Error:", error);
+                spinner.innerHTML = '<p class="text-red-500">Failed to load videos. Please check credentials.</p>';
+                return;
+            }
+
+            allVideosData = data;
+            spinner.style.display = 'none';
+            renderVideoGrid(allVideosData);
+        }
+
+        // Render YouTube Style Grid + Interstitial Ad Banners after every 4 videos
+        function renderVideoGrid(videos) {
+            const feed = document.getElementById('video-feed');
+            feed.innerHTML = '';
+
+            if (videos.length === 0) {
+                feed.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">No videos available yet.</p>';
+                return;
+            }
+
+            videos.forEach((video, index) => {
+                // Create Video Card Component
+                const card = document.createElement('div');
+                card.className = "video-card bg-gray-900 border border-gray-800 rounded-xl overflow-hidden cursor-pointer shadow-md flex flex-col justify-between";
+                card.onclick = () => openPlayer(video);
+
+                card.innerHTML = `
+                    <div class="relative w-full aspect-video bg-gray-800 overflow-hidden">
+                        <img src="${video.thumbnail_url}" alt="${video.title}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <i class="fa-solid fa-circle-play text-red-500 text-5xl"></i>
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <h3 class="text-sm font-semibold text-gray-100 line-clamp-2 leading-snug">${video.title}</h3>
+                    </div>
+                `;
+                feed.appendChild(card);
+
+                // Insert Banner Ad Block after every 4 videos
+                if ((index + 1) % 4 === 0) {
+                    const adCard = document.createElement('div');
+                    adCard.className = "col-span-full bg-gray-900 border border-red-900/30 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";
+                    adCard.innerHTML = `
+                        <span class="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Sponsored Advertisement</span>
+                        <div class="w-full text-xs text-gray-400 py-4 bg-gray-950/60 rounded border border-gray-800">
+                            <!-- Adsterra / Monetag Native Banner Ad Code Places Here -->
+                            [ Adsterra Native Banner Ad Block ]
+                        </div>
+                    `;
+                    feed.appendChild(adCard);
+                }
+            });
+        }
+
+        // Open Modal Player
+        function openPlayer(video) {
+            document.getElementById('modal-iframe').src = video.embed_code;
+            document.getElementById('modal-video-title').innerText = video.title;
+            
+            currentVideoDownloadLink = video.download_link || ADSTERRA_DIRECT_LINK;
+            document.getElementById('modal-download-btn').href = currentVideoDownloadLink;
+
+            // Reset 2-Click Unlock System
+            unlockClickCount = 0;
+            document.getElementById('unlock-overlay').style.display = 'flex';
+            document.getElementById('btn-text').innerText = "Unlock Video (Step 1/2)";
+            document.getElementById('unlock-btn').className = "bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition";
+
+            // Show Modal
+            document.getElementById('player-modal').classList.remove('hidden');
+        }
+
+        // Close Modal Player
+        function closePlayer() {
+            document.getElementById('player-modal').classList.add('hidden');
+            document.getElementById('modal-iframe').src = ""; // Stop video playback
+        }
+
+        // 2-Click Unlock Logic (Opens Adsterra Direct Link)
+        function handleUnlock() {
+            unlockClickCount++;
+            
+            if (unlockClickCount === 1) {
+                window.open(ADSTERRA_DIRECT_LINK, '_blank');
+                document.getElementById('btn-text').innerText = "Click Again to Play (Step 2/2)";
+                document.getElementById('unlock-btn').className = "bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition";
+            } else if (unlockClickCount >= 2) {
+                window.open(ADSTERRA_DIRECT_LINK, '_blank');
+                document.getElementById('unlock-overlay').style.display = 'none';
+            }
+        }
+
+        // Real-time Search Function
+        function searchVideos() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allVideosData.filter(v => v.title.toLowerCase().includes(query));
+            renderVideoGrid(filtered);
+        }
+
+        // Load data on start
+        fetchVideos();
+    </script>
+</body>
+</html>

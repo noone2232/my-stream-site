@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamHub - Super Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-950 text-white font-sans min-h-screen">
+
+    <!-- Admin Header -->
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-user-shield text-red-500 text-2xl"></i>
+            <h1 class="text-xl font-bold tracking-wide">StreamHub Admin Control Panel</h1>
+        </div>
+        <a href="index.html" target="_blank" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm py-2 px-4 rounded-lg transition">
+            <i class="fa-solid fa-external-link-alt mr-1"></i> Visit Website
+        </a>
+    </header>
+
+    <div class="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Video Upload Form (Left Side) -->
+        <div class="lg:col-span-1 bg-gray-900 p-6 rounded-2xl border border-gray-800 h-fit shadow-xl">
+            <h2 class="text-lg font-bold mb-4 text-red-400 flex items-center gap-2">
+                <i class="fa-solid fa-plus-circle"></i> Add New Video
+            </h2>
+
+            <form id="upload-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Video Title</label>
+                    <input type="text" id="v-title" required placeholder="Enter video title..." class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Doodstream / Streamtape Embed Link</label>
+                    <input type="url" id="v-embed" required placeholder="https://doodstream.com/e/xxxx" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Thumbnail Image URL (ImgBB / Direct Link)</label>
+                    <input type="url" id="v-thumb" required placeholder="https://i.ibb.co/xxxx/image.jpg" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Adsterra Download Link (Optional)</label>
+                    <input type="url" id="v-download" placeholder="Your Direct Link here..." class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500">
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg shadow-lg transition flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Publish Video
+                </button>
+            </form>
+        </div>
+
+        <!-- Manage Uploaded Videos (Right Side) -->
+        <div class="lg:col-span-2 bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-gray-200 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check"></i> Manage Videos
+                </h2>
+                <button onclick="loadAdminVideos()" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-md text-gray-300">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+                </button>
+            </div>
+
+            <div id="admin-video-list" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                <!-- Dynamic Video List Loaded Here -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- ⚙️ CONFIGURATION (আপনার Supabase Credentials) ---
+        const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0"; // আপনার anon public key বসান
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Upload Video to Supabase
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = "Publishing...";
+            btn.disabled = true;
+
+            const title = document.getElementById('v-title').value;
+            const embed_code = document.getElementById('v-embed').value;
+            const thumbnail_url = document.getElementById('v-thumb').value;
+            const download_link = document.getElementById('v-download').value;
+
+            const { data, error } = await supabaseClient.from('videos').insert([
+                { title, embed_code, thumbnail_url, download_link }
+            ]);
+
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                alert("Video Published Successfully!");
+                document.getElementById('upload-form').reset();
+                loadAdminVideos();
+            }
+
+            btn.innerText = "Publish Video";
+            btn.disabled = false;
+        });
+
+        // Load Videos in Admin List
+        async function loadAdminVideos() {
+            const list = document.getElementById('admin-video-list');
+            list.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Loading videos...</p>';
+
+            const { data, error } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });
+            if (error) return alert("Error loading videos!");
+
+            list.innerHTML = '';
+            if (data.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No videos found.</p>';
+                return;
+            }
+
+            data.forEach(video => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between bg-gray-800/60 p-3 rounded-xl border border-gray-700/50 hover:border-gray-600 transition";
+                item.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <img src="${video.thumbnail_url}" class="w-16 h-10 object-cover rounded-lg flex-shrink-0">
+                        <div class="truncate">
+                            <h4 class="text-sm font-semibold text-gray-200 truncate">${video.title}</h4>
+                            <p class="text-xs text-gray-500 truncate">${video.embed_code}</p>
+                        </div>
+                    </div>
+                    <button onclick="deleteVideo(${video.id})" class="text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 p-2.5 rounded-lg transition ml-2">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Delete Video
+        async function deleteVideo(id) {
+            if (confirm("Are you sure you want to delete this video?")) {
+                const { error } = await supabaseClient.from('videos').delete().eq('id', id);
+                if (error) alert("Error deleting: " + error.message);
+                else loadAdminVideos();
+            }
+        }
+
+        loadAdminVideos();
+    </script>
+</body>
+</html>
