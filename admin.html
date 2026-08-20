@@ -64,11 +64,11 @@
     button:hover {
       opacity: 0.9;
     }
-    /* Login Overlay Style */
+    /* Login Box Overlay */
     #login-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(15, 23, 42, 0.95);
+      background: #0f172a;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -82,9 +82,6 @@
       width: 320px;
       text-align: center;
     }
-    .hidden {
-      display: none !important;
-    }
     .btn-logout {
       background: #475569;
       float: right;
@@ -96,17 +93,17 @@
   <!-- Login Section -->
   <div id="login-overlay">
     <div class="login-box">
-      <h2>Admin Login</h2>
+      <h2 style="border:none;">Admin Login</h2>
       <div class="form-group">
         <input type="password" id="admin-pass-input" placeholder="Enter Admin Password">
       </div>
-      <button onclick="checkAdminPassword()">Login</button>
+      <button type="button" onclick="checkAdminPassword()">Login</button>
       <p id="login-err" style="color: #ef4444; margin-top: 10px; display: none;">ভুল পাসওয়ার্ড!</p>
     </div>
   </div>
 
-  <!-- Admin Main Dashboard Content -->
-  <div id="admin-dashboard" class="container hidden">
+  <!-- Admin Dashboard -->
+  <div id="admin-dashboard" class="container" style="display: none;">
     <div style="overflow: hidden; margin-bottom: 15px;">
       <button class="btn-logout" onclick="logoutAdmin()">Logout</button>
       <h2>Admin Control Panel</h2>
@@ -121,7 +118,7 @@
       <button onclick="addCategory()">Save Category</button>
     </div>
 
-    <!-- Site Settings (Notice / Telegram) -->
+    <!-- Site Settings (Notice / Links) -->
     <div class="card">
       <h3>২. সাইট সেটিংস (Notice & Links)</h3>
       <div class="form-group">
@@ -153,7 +150,7 @@
         </select>
       </div>
       <div class="form-group">
-        <label>Embed Code / Player URL (Catbox/Doodstream):</label>
+        <label>Embed Code / Player URL:</label>
         <input type="text" id="vid-embed" placeholder="https://catbox.moe/c/xxx or iframe code">
       </div>
       <div class="form-group">
@@ -170,30 +167,21 @@
 
   <script>
     // ==========================================
-    // ⚙️ CONFIGURATION (আপনার তথ্যগুলো এখানে দিন)
+    // ⚙️ CONFIGURATION
     // ==========================================
     const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co"; 
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0";
-    const ADMIN_PASSWORD = "hasan907"; // 👈 আপনার পছন্দের সিক্রেট পাসওয়ার্ড এখানে দিন
+    const ADMIN_PASSWORD = "Hh907$$$"; // 👈 আপনার সিক্রেট পাসওয়ার্ড
 
-    // Initialize Supabase
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let supabaseClient = null;
 
-    // Check Login Status on Page Load
-    window.addEventListener('DOMContentLoaded', () => {
-      if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
-        showDashboard();
-      }
-    });
-
-    // Login Check
+    // Login Functionality (Supabase ছাড়াই কাজ করবে)
     function checkAdminPassword() {
       const inputPass = document.getElementById('admin-pass-input').value;
       const errEl = document.getElementById('login-err');
 
       if (inputPass === ADMIN_PASSWORD) {
         sessionStorage.setItem('isAdminLoggedIn', 'true');
-        errEl.style.display = 'none';
         showDashboard();
       } else {
         errEl.style.display = 'block';
@@ -201,8 +189,14 @@
     }
 
     function showDashboard() {
-      document.getElementById('login-overlay').classList.add('hidden');
-      document.getElementById('admin-dashboard').classList.remove('hidden');
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('admin-dashboard').style.display = 'block';
+      
+      // Initialize Supabase after login
+      if (!supabaseClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+      
       loadCategories();
       loadSettings();
     }
@@ -212,9 +206,15 @@
       location.reload();
     }
 
-    // --- 1. Category Operations ---
+    // Auto Login Check
+    if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+      showDashboard();
+    }
+
+    // --- Database Operations ---
     async function loadCategories() {
-      const { data, error } = await supabase.from('categories').select('*');
+      if(!supabaseClient) return;
+      const { data } = await supabaseClient.from('categories').select('*');
       if (data) {
         const select = document.getElementById('vid-category');
         select.innerHTML = '<option value="">Select Category</option>';
@@ -228,19 +228,18 @@
       const catName = document.getElementById('cat-name').value.trim();
       if (!catName) return alert('ক্যাটাগরির নাম দিন!');
       
-      const { error } = await supabase.from('categories').insert([{ name: catName }]);
-      if (error) {
-        alert('Error: ' + error.message);
-      } else {
+      const { error } = await supabaseClient.from('categories').insert([{ name: catName }]);
+      if (error) alert('Error: ' + error.message);
+      else {
         alert('ক্যাটাগরি সেভ হয়েছে!');
         document.getElementById('cat-name').value = '';
         loadCategories();
       }
     }
 
-    // --- 2. Site Settings Operations ---
     async function loadSettings() {
-      const { data, error } = await supabase.from('settings').select('*').eq('id', 1).maybeSingle();
+      if(!supabaseClient) return;
+      const { data } = await supabaseClient.from('settings').select('*').eq('id', 1).maybeSingle();
       if (data) {
         document.getElementById('setting-notice').value = data.notice || '';
         document.getElementById('setting-telegram').value = data.telegram_link || '';
@@ -253,20 +252,15 @@
       const telegram = document.getElementById('setting-telegram').value.trim();
       const contact = document.getElementById('setting-contact').value.trim();
 
-      // Fix for smooth insert/update
-      const { error } = await supabase.from('settings').upsert(
+      const { error } = await supabaseClient.from('settings').upsert(
         { id: 1, notice: notice, telegram_link: telegram, contact_link: contact },
         { onConflict: 'id' }
       );
 
-      if (error) {
-        alert('Error: ' + error.message);
-      } else {
-        alert('সেটিংস সফলভাবে আপডেট হয়েছে!');
-      }
+      if (error) alert('Error: ' + error.message);
+      else alert('সেটিংস সফলভাবে আপডেট হয়েছে!');
     }
 
-    // --- 3. Add Video Operations ---
     async function addVideo() {
       const title = document.getElementById('vid-title').value.trim();
       const category = document.getElementById('vid-category').value;
@@ -274,11 +268,9 @@
       const thumb = document.getElementById('vid-thumb').value.trim();
       const download = document.getElementById('vid-download').value.trim();
 
-      if (!title || !embed || !thumb) {
-        return alert('টাইটেল, প্লেয়ার লিংক এবং থাম্বনেইল দেওয়া বাধ্যতামূলক!');
-      }
+      if (!title || !embed || !thumb) return alert('টাইটেল, প্লেয়ার লিংক এবং থাম্বনেইল দেওয়া বাধ্যতামূলক!');
 
-      const { error } = await supabase.from('videos').insert([{
+      const { error } = await supabaseClient.from('videos').insert([{
         title: title,
         category: category,
         embed_code: embed,
@@ -286,9 +278,8 @@
         download_link: download
       }]);
 
-      if (error) {
-        alert('Error: ' + error.message);
-      } else {
+      if (error) alert('Error: ' + error.message);
+      else {
         alert('ভিডিও সফলভাবে আপলোড করা হয়েছে!');
         document.getElementById('vid-title').value = '';
         document.getElementById('vid-embed').value = '';
