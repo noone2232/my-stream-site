@@ -10,8 +10,7 @@
             darkMode: 'class',
         }
     </script>
-    <!-- Supabase CDN JS Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .video-card:hover { transform: translateY(-4px); transition: all 0.2s ease-in-out; }
@@ -94,6 +93,7 @@
             <div class="overflow-y-auto">
                 
                 <!-- 🎯 TOP BANNER AD PLACE (Player-এর উপরে) -->
+                <!-- পছন্দমতো যেকোনো সাইজের Banner Ad Script এখানে বসান (e.g. 728x90, 468x60, 320x50) -->
                 <div class="p-1 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-b border-gray-200 dark:border-gray-800 min-h-[50px]">
                     <span class="text-[10px] text-gray-400 uppercase tracking-widest">[ Top Player Banner Ad Place ]</span>
                 </div>
@@ -121,6 +121,7 @@
                 </div>
 
                 <!-- 🎯 BOTTOM BANNER AD PLACE (Player-এর নিচে) -->
+                <!-- পছন্দমতো যেকোনো সাইজের Banner Ad Script এখানে বসান (e.g. 728x90, 300x250) -->
                 <div class="p-2 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-t border-gray-200 dark:border-gray-800 min-h-[60px]">
                     <span class="text-[10px] text-gray-400 uppercase tracking-widest">[ Bottom Player Banner Ad Place ]</span>
                 </div>
@@ -132,152 +133,125 @@
     <!-- JavaScript Logic -->
     <script>
         // --- ⚙️ CONFIGURATION ---
-        const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co";[cite: 6]
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0";[cite: 6] 
-        const ADSTERRA_DIRECT_LINK = "https://consistinvention.com/tvprnh1m8?key=04e934389df942532a60c6b975af665a";[cite: 6] 
+        const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0"; 
+        const ADSTERRA_DIRECT_LINK = "https://consistinvention.com/tvprnh1m8?key=04e934389df942532a60c6b975af665a"; 
 
-        // Safe Supabase Initialization
-        let supabaseClient = null;
-        try {
-            if (typeof supabase !== 'undefined') {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            }
-        } catch(e) {
-            console.error("Supabase Init Error: ", e);
-        }
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let allVideosData = [];[cite: 6]
-        let unlockClickCount = 0;[cite: 6]
-        let selectedCategory = "All";[cite: 6]
-        let currentEmbedUrl = "";
+        let allVideosData = [];
+        let unlockClickCount = 0;
+        let selectedCategory = "All";
+        let currentVideoEmbedCode = "";
 
-        // Auto Generate Thumbnail from Video Embed URL
+        // Auto Generate Thumbnail from Video Embed URL if Image Link is missing
         function getAutoThumbnail(embedUrl) {
-            if (!embedUrl) return 'https://via.placeholder.com/640x360?text=No+Thumbnail';[cite: 6]
-            if (embedUrl.includes('streamtape')) {[cite: 6]
-                const id = embedUrl.split('/e/')[1]?.split('/')[0] || embedUrl.split('/v/')[1]?.split('/')[0];[cite: 6]
-                return id ? `https://thumb.streamtape.com/image/${id}.png` : 'https://via.placeholder.com/640x360?text=Streamtape+Video';[cite: 6]
+            if (!embedUrl) return 'https://via.placeholder.com/640x360?text=No+Thumbnail';
+            if (embedUrl.includes('streamtape')) {
+                const id = embedUrl.split('/e/')[1]?.split('/')[0] || embedUrl.split('/v/')[1]?.split('/')[0];
+                return id ? `https://thumb.streamtape.com/image/${id}.png` : 'https://via.placeholder.com/640x360?text=Streamtape+Video';
             }
-            if (embedUrl.includes('dood')) {[cite: 6]
-                return 'https://via.placeholder.com/640x360/0f172a/ef4444?text=Play+DoodStream+Video';[cite: 6]
+            if (embedUrl.includes('dood')) {
+                return 'https://via.placeholder.com/640x360/0f172a/ef4444?text=Play+DoodStream+Video';
             }
-            return 'https://via.placeholder.com/640x360/0f172a/ffffff?text=Play+Video';[cite: 6]
+            return 'https://via.placeholder.com/640x360/0f172a/ffffff?text=Play+Video';
         }
 
         // Dark / Light Theme Controller
         function toggleTheme() {
-            const html = document.documentElement;[cite: 6]
-            const icon = document.getElementById('theme-icon');[cite: 6]
-            if (html.classList.contains('dark')) {[cite: 6]
-                html.classList.remove('dark');[cite: 6]
-                icon.className = "fa-solid fa-sun text-lg";[cite: 6]
-                localStorage.setItem('theme', 'light');[cite: 6]
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = "fa-solid fa-sun text-lg";
+                localStorage.setItem('theme', 'light');
             } else {
-                html.classList.add('dark');[cite: 6]
-                icon.className = "fa-solid fa-moon text-lg";[cite: 6]
-                localStorage.setItem('theme', 'dark');[cite: 6]
+                html.classList.add('dark');
+                icon.className = "fa-solid fa-moon text-lg";
+                localStorage.setItem('theme', 'dark');
             }
         }
-        if (localStorage.getItem('theme') === 'light') toggleTheme();[cite: 6]
+        if (localStorage.getItem('theme') === 'light') toggleTheme();
 
         // Load Settings (Notice, Telegram, Contact)
         async function fetchSettings() {
-            if (!supabaseClient) return;
-            try {
-                const { data } = await supabaseClient.from('settings').select('*').single();[cite: 6]
-                if (data) {[cite: 6]
-                    if (data.notice && data.notice.trim() !== "") {[cite: 6]
-                        document.getElementById('notice-text').innerText = data.notice;[cite: 6]
-                        document.getElementById('notice-container').classList.remove('hidden');[cite: 6]
-                    }
-                    if (data.telegram_link && data.telegram_link.trim() !== "") {[cite: 6]
-                        document.getElementById('telegram-link-btn').href = data.telegram_link;[cite: 6]
-                        document.getElementById('telegram-banner-container').classList.remove('hidden');[cite: 6]
-                    }
-                    if (data.contact_link && data.contact_link.trim() !== "") {[cite: 6]
-                        document.getElementById('contact-btn').href = data.contact_link;[cite: 6]
-                        document.getElementById('contact-btn').classList.remove('hidden');[cite: 6]
-                    }
+            const { data } = await supabaseClient.from('settings').select('*').single();
+            if (data) {
+                if (data.notice && data.notice.trim() !== "") {
+                    document.getElementById('notice-text').innerText = data.notice;
+                    document.getElementById('notice-container').classList.remove('hidden');
                 }
-            } catch (err) {
-                console.log(err);
+                if (data.telegram_link && data.telegram_link.trim() !== "") {
+                    document.getElementById('telegram-link-btn').href = data.telegram_link;
+                    document.getElementById('telegram-banner-container').classList.remove('hidden');
+                }
+                if (data.contact_link && data.contact_link.trim() !== "") {
+                    document.getElementById('contact-btn').href = data.contact_link;
+                    document.getElementById('contact-btn').classList.remove('hidden');
+                }
             }
         }
 
         // Load Categories
         async function fetchCategories() {
-            if (!supabaseClient) return;
-            try {
-                const { data } = await supabaseClient.from('categories').select('*');[cite: 6]
-                const bar = document.getElementById('category-bar');[cite: 6]
-                if (data) {[cite: 6]
-                    data.forEach(cat => {[cite: 6]
-                        const btn = document.createElement('button');[cite: 6]
-                        btn.className = "category-btn bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";[cite: 6]
-                        btn.innerText = cat.name;[cite: 6]
-                        btn.onclick = () => filterCategory(cat.name);[cite: 6]
-                        bar.appendChild(btn);[cite: 6]
-                    });
-                }
-            } catch(err) {
-                console.log(err);
+            const { data } = await supabaseClient.from('categories').select('*');
+            const bar = document.getElementById('category-bar');
+            if (data) {
+                data.forEach(cat => {
+                    const btn = document.createElement('button');
+                    btn.className = "category-btn bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";
+                    btn.innerText = cat.name;
+                    btn.onclick = () => filterCategory(cat.name);
+                    bar.appendChild(btn);
+                });
             }
         }
 
         // Filter Videos by Category
         function filterCategory(catName) {
-            selectedCategory = catName;[cite: 6]
-            document.querySelectorAll('.category-btn').forEach(btn => {[cite: 6]
-                if (btn.innerText === catName) {[cite: 6]
-                    btn.className = "category-btn bg-red-600 text-white text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 shadow-sm transition";[cite: 6]
+            selectedCategory = catName;
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                if (btn.innerText === catName) {
+                    btn.className = "category-btn bg-red-600 text-white text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shadow-sm transition";
                 } else {
-                    btn.className = "category-btn bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";[cite: 6]
+                    btn.className = "category-btn bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";
                 }
             });
-            const filtered = selectedCategory === "All" ? allVideosData : allVideosData.filter(v => v.category === selectedCategory);[cite: 6]
-            renderVideoGrid(filtered);[cite: 6]
+            const filtered = selectedCategory === "All" ? allVideosData : allVideosData.filter(v => v.category === selectedCategory);
+            renderVideoGrid(filtered);
         }
 
         // Fetch Videos
         async function fetchVideos() {
-            const spinner = document.getElementById('loading-spinner');[cite: 6]
-            if (!supabaseClient) {
-                spinner.innerHTML = '<p class="text-red-500">Database Connection Error. Please refresh.</p>';
+            const spinner = document.getElementById('loading-spinner');
+            const { data, error } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });
+
+            if (error) {
+                spinner.innerHTML = '<p class="text-red-500">Failed to load videos.</p>';
                 return;
             }
 
-            try {
-                const { data, error } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });[cite: 6]
-
-                if (error) {[cite: 6]
-                    spinner.innerHTML = '<p class="text-red-500">Failed to load videos.</p>';[cite: 6]
-                    return;
-                }
-
-                allVideosData = data;[cite: 6]
-                spinner.style.display = 'none';[cite: 6]
-                renderVideoGrid(allVideosData);[cite: 6]
-            } catch(e) {
-                spinner.innerHTML = '<p class="text-red-500">Something went wrong. Please reload.</p>';
-            }
+            allVideosData = data;
+            spinner.style.display = 'none';
+            renderVideoGrid(allVideosData);
         }
 
         // Render Video Grid + Ad Banners
         function renderVideoGrid(videos) {
-            const feed = document.getElementById('video-feed');[cite: 6]
-            feed.innerHTML = '';[cite: 6]
+            const feed = document.getElementById('video-feed');
+            feed.innerHTML = '';
 
-            if (videos.length === 0) {[cite: 6]
-                feed.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">No videos found.</p>';[cite: 6]
+            if (videos.length === 0) {
+                feed.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">No videos found.</p>';
                 return;
             }
 
-            videos.forEach((video, index) => {[cite: 6]
-                const card = document.createElement('div');[cite: 6]
-                card.className = "video-card bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden cursor-pointer shadow-md flex flex-col justify-between";[cite: 6]
-                card.onclick = () => openPlayer(video);[cite: 6]
+            videos.forEach((video, index) => {
+                const card = document.createElement('div');
+                card.className = "video-card bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden cursor-pointer shadow-md flex flex-col justify-between";
+                card.onclick = () => openPlayer(video);
 
-                const thumb = video.thumbnail_url && video.thumbnail_url.trim() !== "" ? video.thumbnail_url : getAutoThumbnail(video.embed_code);[cite: 6]
+                const thumb = video.thumbnail_url && video.thumbnail_url.trim() !== "" ? video.thumbnail_url : getAutoThumbnail(video.embed_code);
 
                 card.innerHTML = `
                     <div class="relative w-full aspect-video bg-gray-800 overflow-hidden">
@@ -290,80 +264,75 @@
                     <div class="p-3">
                         <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100 line-clamp-2 leading-snug">${video.title}</h3>
                     </div>
-                `;[cite: 6]
-                feed.appendChild(card);[cite: 6]
+                `;
+                feed.appendChild(card);
 
                 // Insert Interstitial Banner Ad Block after every 4 videos
-                if ((index + 1) % 4 === 0) {[cite: 6]
-                    const adCard = document.createElement('div');[cite: 6]
-                    adCard.className = "col-span-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";[cite: 6]
+                if ((index + 1) % 4 === 0) {
+                    const adCard = document.createElement('div');
+                    adCard.className = "col-span-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";
                     adCard.innerHTML = `
                         <span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>
+                        <!-- 🎯 BANNER AD CODE PLACE (Native Banner / 300x250 / 728x90) -->
                         <div class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
                             [ Adsterra Native Banner Block ]
                         </div>
-                    `;[cite: 6]
-                    feed.appendChild(adCard);[cite: 6]
+                    `;
+                    feed.appendChild(adCard);
                 }
             });
         }
 
         // Open Modal Player
         function openPlayer(video) {
-            currentEmbedUrl = video.embed_code;
-            document.getElementById('modal-iframe').src = ""; // আনলকের আগে ভিডিও লোড হবে না
-            document.getElementById('modal-video-title').innerText = video.title;[cite: 6]
+            currentVideoEmbedCode = video.embed_code;
+            document.getElementById('modal-iframe').src = "";
+            document.getElementById('modal-video-title').innerText = video.title;
             
-            const dlContainer = document.getElementById('download-container');[cite: 6]
-            if (video.download_link && video.download_link.trim() !== "") {[cite: 6]
-                document.getElementById('modal-download-btn').href = video.download_link;[cite: 6]
-                dlContainer.classList.remove('hidden');[cite: 6]
+            const dlContainer = document.getElementById('download-container');
+            if (video.download_link && video.download_link.trim() !== "") {
+                document.getElementById('modal-download-btn').href = video.download_link;
+                dlContainer.classList.remove('hidden');
             } else {
-                dlContainer.classList.add('hidden');[cite: 6]
+                dlContainer.classList.add('hidden');
             }
 
-            unlockClickCount = 0;[cite: 6]
-            document.getElementById('unlock-overlay').style.display = 'flex';[cite: 6]
-            document.getElementById('btn-text').innerText = "Unlock Video (Step 1/2)";[cite: 6]
-            document.getElementById('unlock-btn').className = "bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition";[cite: 6]
+            unlockClickCount = 0;
+            document.getElementById('unlock-overlay').style.display = 'flex';
+            document.getElementById('btn-text').innerText = "Unlock Video (Step 1/2)";
+            document.getElementById('unlock-btn').className = "bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition";
 
-            document.getElementById('player-modal').classList.remove('hidden');[cite: 6]
+            document.getElementById('player-modal').classList.remove('hidden');
         }
 
         function closePlayer() {
-            document.getElementById('player-modal').classList.add('hidden');[cite: 6]
-            document.getElementById('modal-iframe').src = "";[cite: 6]
-            currentEmbedUrl = "";
+            document.getElementById('player-modal').classList.add('hidden');
+            document.getElementById('modal-iframe').src = "";
+            currentVideoEmbedCode = "";
         }
 
-        // Handle Unlock Logic
         function handleUnlock() {
-            unlockClickCount++;[cite: 6]
-            if (unlockClickCount === 1) {[cite: 6]
-                window.open(ADSTERRA_DIRECT_LINK, '_blank');[cite: 6]
-                document.getElementById('btn-text').innerText = "Click Again to Play (Step 2/2)";[cite: 6]
-                document.getElementById('unlock-btn').className = "bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition";[cite: 6]
-            } else if (unlockClickCount >= 2) {[cite: 6]
-                window.open(ADSTERRA_DIRECT_LINK, '_blank');[cite: 6]
-                document.getElementById('unlock-overlay').style.display = 'none';[cite: 6]
-                
-                // আনলকের পরই শুধু ভিডিও চালু হবে
-                document.getElementById('modal-iframe').src = currentEmbedUrl;
+            unlockClickCount++;
+            if (unlockClickCount === 1) {
+                window.open(ADSTERRA_DIRECT_LINK, '_blank');
+                document.getElementById('btn-text').innerText = "Click Again to Play (Step 2/2)";
+                document.getElementById('unlock-btn').className = "bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition";
+            } else if (unlockClickCount >= 2) {
+                window.open(ADSTERRA_DIRECT_LINK, '_blank');
+                document.getElementById('unlock-overlay').style.display = 'none';
+                document.getElementById('modal-iframe').src = currentVideoEmbedCode;
             }
         }
 
         function searchVideos() {
-            const query = document.getElementById('search-input').value.toLowerCase();[cite: 6]
-            const filtered = allVideosData.filter(v => v.title.toLowerCase().includes(query));[cite: 6]
-            renderVideoGrid(filtered);[cite: 6]
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allVideosData.filter(v => v.title.toLowerCase().includes(query));
+            renderVideoGrid(filtered);
         }
 
-        // Initialize Functions on Load
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchSettings();[cite: 6]
-            fetchCategories();[cite: 6]
-            fetchVideos();[cite: 6]
-        });
+        fetchSettings();
+        fetchCategories();
+        fetchVideos();
     </script>
 </body>
 </html>
