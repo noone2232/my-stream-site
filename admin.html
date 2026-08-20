@@ -1,366 +1,497 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DesiTube - Secure Admin Panel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --accent-color: #e11d48;
+      --border-color: #334155;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h2, h3 {
+      border-bottom: 2px solid var(--accent-color);
+      padding-bottom: 8px;
+    }
+    .card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: #0f172a;
+      color: #fff;
+      box-sizing: border-box;
+    }
+    button {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .btn-secondary {
+      background: #334155;
+    }
+    .btn-edit {
+      background: #d97706;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    .btn-delete {
+      background: #dc2626;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    
+    /* Login Box Overlay */
+    #login-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .login-box {
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      width: 320px;
+      text-align: center;
+    }
+    .lock-icon {
+      width: 50px;
+      height: 50px;
+      background: rgba(225, 29, 72, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 15px auto;
+      border: 1px solid rgba(225, 29, 72, 0.3);
+      color: var(--accent-color);
+      font-size: 20px;
+    }
+    .btn-logout {
+      background: #475569;
+      float: right;
+    }
+
+    /* Badge & Item List Design */
+    .cat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      margin-right: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .video-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f172a;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 10px;
+      gap: 12px;
+    }
+    .video-info-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow: hidden;
+    }
+    .video-list-thumb {
+      width: 50px;
+      height: 35px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      background: #1e293b;
+      flex-shrink: 0;
+    }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen">
+<body>
 
-    <!-- 1. Password Login Overlay -->
-    <div id="login-overlay" class="fixed inset-0 bg-slate-950 flex justify-center items-center z-50 p-4">
-        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
-            <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
-                <i class="fa-solid fa-lock text-2xl text-red-500"></i>
-            </div>
-            <h2 class="text-xl font-bold mb-1">Admin Access Required</h2>
-            <p class="text-xs text-slate-400 mb-6">প্রবেশ করতে অ্যাডমিন পাসওয়ার্ড লিখুন</p>
-            
-            <div class="space-y-4">
-                <input type="password" id="admin-pass-input" placeholder="Enter Password" class="w-full bg-slate-950 text-sm rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-red-500 text-center font-mono">
-                <button type="button" onclick="checkAdminPassword()" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-xl text-sm transition shadow-lg shadow-red-600/20">Login to Dashboard</button>
-                <p id="login-err" class="text-xs text-red-400 font-medium hidden">ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।</p>
-            </div>
-        </div>
+  <!-- Login Section -->
+  <div id="login-overlay">
+    <div class="login-box">
+      <div class="lock-icon">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h2 style="border:none; margin-top:0; margin-bottom:5px;">Admin Access Required</h2>
+      <p style="font-size: 12px; color: #94a3b8; margin-bottom: 20px;">প্রবেশ করতে অ্যাডমিন পাসওয়ার্ড লিখুন</p>
+      
+      <div class="form-group">
+        <input type="password" id="admin-pass-input" placeholder="Enter Admin Password" style="text-align:center;">
+      </div>
+      <button type="button" onclick="checkAdminPassword()" style="width: 100%;">Login to Dashboard</button>
+      <p id="login-err" style="color: #ef4444; margin-top: 10px; font-size: 13px; display: none;">ভুল পাসওয়ার্ড!</p>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="admin-dashboard" class="container" style="display: none;">
+    <div style="overflow: hidden; margin-bottom: 15px;">
+      <button class="btn-logout" onclick="logoutAdmin()">Logout</button>
+      <h2>Admin Control Panel</h2>
     </div>
 
-    <!-- 2. Main Admin Dashboard -->
-    <div id="admin-dashboard" class="max-w-5xl mx-auto space-y-6 p-4 md:p-8" style="display: none;">
-        
-        <!-- Header Section -->
-        <div class="flex flex-wrap justify-between items-center bg-slate-900/60 p-5 rounded-2xl border border-slate-800 backdrop-blur-sm gap-4">
+    <!-- Category Management -->
+    <div class="card">
+      <h3>১. ক্যাটাগরি ম্যানেজমেন্ট (Add, Rename & Delete)</h3>
+      <div class="form-group">
+        <input type="text" id="cat-name" placeholder="যেমন: Desi, Web Series, Foreign">
+      </div>
+      <button onclick="addCategory()">Save Category</button>
+      
+      <div id="category-list-container" style="margin-top: 15px;">
+        <!-- Dynamic Categories badges will appear here -->
+      </div>
+    </div>
+
+    <!-- Site Settings (Notice / Links) -->
+    <div class="card">
+      <h3>২. সাইট সেটিংস (Notice & Links)</h3>
+      <div class="form-group">
+        <label>Website Notice Banner:</label>
+        <textarea id="setting-notice" rows="2" placeholder="সাইটের নোটিশ লিখুন..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Telegram Channel Link:</label>
+        <input type="text" id="setting-telegram" placeholder="https://t.me/yourchannel">
+      </div>
+      <div class="form-group">
+        <label>Contact / Report Link:</label>
+        <input type="text" id="setting-contact" placeholder="https://t.me/yourcontact">
+      </div>
+      <button onclick="saveSettings()">Save Settings</button>
+    </div>
+
+    <!-- Add / Edit Video Section -->
+    <div class="card" id="video-form-card">
+      <h3 id="video-form-title">৩. নতুন ভিডিও আপলোড / যোগ করুন</h3>
+      <input type="hidden" id="vid-edit-id">
+
+      <div class="form-group">
+        <label>Video Title *:</label>
+        <input type="text" id="vid-title" placeholder="ভিডিওর শিরোনাম">
+      </div>
+      <div class="form-group">
+        <label>Category:</label>
+        <select id="vid-category">
+          <option value="">Select Category</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Embed Code / Player URL *:</label>
+        <input type="text" id="vid-embed" placeholder="https://catbox.moe/c/xxx or iframe code">
+      </div>
+      <div class="form-group">
+        <label>Thumbnail Image URL *:</label>
+        <input type="text" id="vid-thumb" placeholder="https://i.ibb.co/xxx/image.jpg">
+      </div>
+      <div class="form-group">
+        <label>Direct Download Link (Optional):</label>
+        <input type="text" id="vid-download" placeholder="https://files.catbox.moe/xxx.mp4">
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <button id="vid-submit-btn" onclick="saveVideo()">Upload Video</button>
+        <button id="vid-cancel-btn" onclick="resetVideoForm()" class="btn-secondary" style="display: none;">Cancel Edit</button>
+      </div>
+    </div>
+
+    <!-- All Uploaded Videos (Manage List) -->
+    <div class="card">
+      <h3>৪. ভিডিও তালিকা ও ম্যানেজমেন্ট (Edit & Delete)</h3>
+      <div id="video-list-container">
+        <!-- Dynamic video list will appear here -->
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // ⚙️ CONFIGURATION & CREDENTIALS
+    // ==========================================
+    const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co"; 
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0";
+    const ADMIN_PASSWORD = "Hh907$$$"; // 👈 আপনার সিক্রেট পাসওয়ার্ড
+
+    let supabaseClient = null;
+
+    // --- Login Logic ---
+    function checkAdminPassword() {
+      const inputPass = document.getElementById('admin-pass-input').value;
+      const errEl = document.getElementById('login-err');
+
+      if (inputPass === ADMIN_PASSWORD) {
+        sessionStorage.setItem('isAdminLoggedIn', 'true');
+        errEl.style.display = 'none';
+        showDashboard();
+      } else {
+        errEl.style.display = 'block';
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('admin-dashboard').style.display = 'block';
+      
+      // Init Supabase Client
+      if (!supabaseClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+      
+      loadCategories();
+      loadSettings();
+      loadVideos();
+    }
+
+    function logoutAdmin() {
+      sessionStorage.removeItem('isAdminLoggedIn');
+      location.reload();
+    }
+
+    // Auto Login Check
+    if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+      showDashboard();
+    }
+
+    // --- Category Operations (Add, Rename, Delete) ---
+    async function loadCategories() {
+      if(!supabaseClient) return;
+      const { data } = await supabaseClient.from('categories').select('*');
+      
+      const select = document.getElementById('vid-category');
+      const catContainer = document.getElementById('category-list-container');
+      
+      select.innerHTML = '<option value="">Select Category</option>';
+      catContainer.innerHTML = '';
+
+      if (data) {
+        data.forEach(cat => {
+          select.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+
+          const badge = document.createElement('div');
+          badge.className = 'cat-badge';
+          badge.innerHTML = `
+            <span>${cat.name}</span>
+            <i class="fa-solid fa-pen-to-square" style="color: #f59e0b; cursor: pointer; font-size: 12px;" onclick="renameCategory(${cat.id}, '${cat.name}')" title="Rename"></i>
+            <i class="fa-solid fa-trash" style="color: #ef4444; cursor: pointer; font-size: 12px;" onclick="deleteCategory(${cat.id})" title="Delete"></i>
+          `;
+          catContainer.appendChild(badge);
+        });
+      }
+    }
+
+    async function addCategory() {
+      const catName = document.getElementById('cat-name').value.trim();
+      if (!catName) return alert('ক্যাটাগরির নাম দিন!');
+      
+      const { error } = await supabaseClient.from('categories').insert([{ name: catName }]);
+      if (error) alert('Error: ' + error.message);
+      else {
+        alert('ক্যাটাগরি সেভ হয়েছে!');
+        document.getElementById('cat-name').value = '';
+        loadCategories();
+      }
+    }
+
+    async function renameCategory(id, currentName) {
+      const newName = prompt('ক্যাটাগরির নতুন নাম লিখুন:', currentName);
+      if (newName && newName.trim() !== '' && newName.trim() !== currentName) {
+        const { error } = await supabaseClient.from('categories').update({ name: newName.trim() }).eq('id', id);
+        if (error) alert('Error: ' + error.message);
+        else {
+          alert('ক্যাটাগরির নাম পরিবর্তন করা হয়েছে!');
+          loadCategories();
+        }
+      }
+    }
+
+    async function deleteCategory(id) {
+      if (confirm('আপনি কি নিশ্চিত এই ক্যাটাগরি ডিলিট করতে চান?')) {
+        const { error } = await supabaseClient.from('categories').delete().eq('id', id);
+        if (error) alert('Error: ' + error.message);
+        else loadCategories();
+      }
+    }
+
+    // --- Site Settings Operations ---
+    async function loadSettings() {
+      if(!supabaseClient) return;
+      const { data } = await supabaseClient.from('settings').select('*').eq('id', 1).maybeSingle();
+      if (data) {
+        document.getElementById('setting-notice').value = data.notice || '';
+        document.getElementById('setting-telegram').value = data.telegram_link || '';
+        document.getElementById('setting-contact').value = data.contact_link || '';
+      }
+    }
+
+    async function saveSettings() {
+      const notice = document.getElementById('setting-notice').value.trim();
+      const telegram = document.getElementById('setting-telegram').value.trim();
+      const contact = document.getElementById('setting-contact').value.trim();
+
+      const { error } = await supabaseClient.from('settings').upsert(
+        { id: 1, notice: notice, telegram_link: telegram, contact_link: contact },
+        { onConflict: 'id' }
+      );
+
+      if (error) alert('Error: ' + error.message);
+      else alert('সেটিংস সফলভাবে আপডেট হয়েছে!');
+    }
+
+    // --- Video Management (Add, Edit, Update, Delete, List) ---
+    async function saveVideo() {
+      const editId = document.getElementById('vid-edit-id').value;
+      const title = document.getElementById('vid-title').value.trim();
+      const category = document.getElementById('vid-category').value;
+      const embed = document.getElementById('vid-embed').value.trim();
+      const thumb = document.getElementById('vid-thumb').value.trim();
+      const download = document.getElementById('vid-download').value.trim();
+
+      if (!title || !embed || !thumb) return alert('টাইটেল, প্লেয়ার লিংক এবং থাম্বনেইল দেওয়া বাধ্যতামূলক!');
+
+      const payload = {
+        title: title,
+        category: category,
+        embed_code: embed,
+        thumbnail_url: thumb,
+        download_link: download
+      };
+
+      if (editId) {
+        // Update Video
+        const { error } = await supabaseClient.from('videos').update(payload).eq('id', editId);
+        if (error) alert('Error: ' + error.message);
+        else alert('ভিডিও আপডেট করা হয়েছে!');
+      } else {
+        // Add New Video
+        const { error } = await supabaseClient.from('videos').insert([payload]);
+        if (error) alert('Error: ' + error.message);
+        else alert('ভিডিও আপলোড করা হয়েছে!');
+      }
+
+      resetVideoForm();
+      loadVideos();
+    }
+
+    async function loadVideos() {
+      if(!supabaseClient) return;
+      const { data } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });
+      const container = document.getElementById('video-list-container');
+      container.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p style="color: #64748b; font-style: italic;">কোন ভিডিও পাওয়া যায়নি।</p>';
+        return;
+      }
+
+      data.forEach(vid => {
+        const item = document.createElement('div');
+        item.className = 'video-item';
+        item.innerHTML = `
+          <div class="video-info-box">
+            <img src="${vid.thumbnail_url || 'https://via.placeholder.com/50x35'}" class="video-list-thumb" alt="Thumb">
             <div>
-                <h1 class="text-xl font-bold text-red-500 flex items-center gap-2">
-                    <i class="fa-solid fa-sliders"></i> DesiTube Control Panel
-                </h1>
-                <p class="text-xs text-slate-400 mt-0.5">ওয়েবসাইটের কনটেন্ট ও সেটিংস পরিচালনা করুন</p>
+              <div style="font-weight: bold; font-size: 14px;">${vid.title}</div>
+              <div style="font-size: 11px; color: #94a3b8;">ক্যাটাগরি: ${vid.category || 'None'}</div>
             </div>
-            <div class="flex items-center gap-2">
-                <a href="/" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-xs px-4 py-2 rounded-xl transition flex items-center gap-2 border border-slate-700">
-                    <i class="fa-solid fa-globe"></i> View Website
-                </a>
-                <button onclick="logoutAdmin()" class="bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-xs px-3 py-2 rounded-xl transition border border-slate-700">
-                    <i class="fa-solid fa-right-from-bracket"></i> Logout
-                </button>
-            </div>
-        </div>
+          </div>
+          <div style="display: flex; gap: 6px; flex-shrink: 0;">
+            <button class="btn-edit" onclick='startEditVideo(${JSON.stringify(vid).replace(/'/g, "&apos;")})'>Edit</button>
+            <button class="btn-delete" onclick="deleteVideo(${vid.id})">Delete</button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
 
-        <!-- Site Settings Section -->
-        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
-            <h2 class="text-md font-semibold mb-4 text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
-                <i class="fa-solid fa-gear text-amber-500"></i> Site Settings (Notice & Social Links)
-            </h2>
-            <form id="settings-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-400">Marquee Notice Text (খালি রাখলে সাইটে দেখাবে না)</label>
-                    <input type="text" id="notice-input" placeholder="যেমন: নতুন সব ভিডিও দেখতে আমাদের সাথে থাকুন..." class="w-full bg-slate-950 text-sm rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-red-500">
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-slate-400">Telegram Channel Link</label>
-                        <input type="url" id="telegram-input" placeholder="https://t.me/yourchannel" class="w-full bg-slate-950 text-sm rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-red-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-slate-400">Contact Link (Telegram/WhatsApp/Email)</label>
-                        <input type="text" id="contact-input" placeholder="https://t.me/yourusername" class="w-full bg-slate-950 text-sm rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-red-500">
-                    </div>
-                </div>
-                <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2.5 px-6 rounded-xl text-xs transition shadow-lg shadow-amber-600/10">
-                    Save Settings
-                </button>
-            </form>
-        </div>
+    function startEditVideo(vid) {
+      document.getElementById('vid-edit-id').value = vid.id;
+      document.getElementById('vid-title').value = vid.title;
+      document.getElementById('vid-category').value = vid.category || '';
+      document.getElementById('vid-embed').value = vid.embed_code;
+      document.getElementById('vid-thumb').value = vid.thumbnail_url || '';
+      document.getElementById('vid-download').value = vid.download_link || '';
 
-        <!-- Category Management Section -->
-        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
-            <h2 class="text-md font-semibold mb-4 text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
-                <i class="fa-solid fa-list text-blue-500"></i> Manage Categories
-            </h2>
-            <form id="category-form" class="flex gap-2 mb-4">
-                <input type="text" id="cat-name-input" placeholder="যেমন: দেশী, Web Series, Foreign" class="flex-1 bg-slate-950 text-sm rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-blue-500" required>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-xl text-xs transition shadow-lg shadow-blue-600/10">
-                    Add Category
-                </button>
-            </form>
-            <div id="category-list" class="flex flex-wrap gap-2"></div>
-        </div>
+      document.getElementById('video-form-title').innerText = '৩. ভিডিও এডিট করুন';
+      document.getElementById('vid-submit-btn').innerText = 'Update Video';
+      document.getElementById('vid-cancel-btn').style.display = 'inline-block';
 
-        <!-- Video Add / Edit Section -->
-        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
-            <h2 id="form-title" class="text-md font-semibold mb-4 text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
-                <i class="fa-solid fa-video text-emerald-500"></i> Add New Video
-            </h2>
-            <form id="video-form" class="space-y-4">
-                <input type="hidden" id="edit-video-id">
+      // Scroll smoothly to form
+      document.getElementById('video-form-card').scrollIntoView({ behavior: 'smooth' });
+    }
 
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-400">Video Title *</label>
-                    <input type="text" id="video-title" placeholder="ভিডিওর নাম বা টাইটেল লিখুন..." class="w-full bg-slate-950 text-sm rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-red-500" required>
-                </div>
+    function resetVideoForm() {
+      document.getElementById('vid-edit-id').value = '';
+      document.getElementById('vid-title').value = '';
+      document.getElementById('vid-category').value = '';
+      document.getElementById('vid-embed').value = '';
+      document.getElementById('vid-thumb').value = '';
+      document.getElementById('vid-download').value = '';
 
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-400">Embed Video Link / URL * (Catbox / Streamtape / Doodstream / Iframe)</label>
-                    <input type="text" id="video-embed" placeholder="https://catbox.moe/c/xxx or https://streamtape.com/e/..." class="w-full bg-slate-950 text-sm rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-red-500" required>
-                </div>
+      document.getElementById('video-form-title').innerText = '৩. নতুন ভিডিও আপলোড / যোগ করুন';
+      document.getElementById('vid-submit-btn').innerText = 'Upload Video';
+      document.getElementById('vid-cancel-btn').style.display = 'none';
+    }
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-slate-400">Thumbnail Image Link (Optional)</label>
-                        <input type="url" id="video-thumb" placeholder="https://i.ibb.co/xxx.jpg" class="w-full bg-slate-950 text-sm rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-red-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-slate-400">Category (Optional)</label>
-                        <select id="video-category" class="w-full bg-slate-950 text-sm rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-red-500 text-slate-300">
-                            <option value="">None</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-400">Download Button Link (Optional)</label>
-                    <input type="text" id="video-download" placeholder="খালি রাখলে ভিডিওতে ডাউনলোড বাটন দেখাবে না" class="w-full bg-slate-950 text-sm rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-red-500">
-                </div>
-
-                <div class="flex gap-2 pt-2">
-                    <button type="submit" id="save-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl text-xs transition shadow-lg shadow-red-600/20">
-                        Save Video
-                    </button>
-                    <button type="button" id="cancel-edit-btn" onclick="resetVideoForm()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 px-4 rounded-xl text-xs transition border border-slate-700">
-                        Cancel Edit
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- All Videos List Section -->
-        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
-            <h2 class="text-md font-semibold mb-4 text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
-                <i class="fa-solid fa-list-check text-red-500"></i> All Uploaded Videos
-            </h2>
-            <div id="video-list" class="space-y-3"></div>
-        </div>
-
-    </div>
-
-    <!-- JavaScript Logic -->
-    <script>
-        const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co";[cite: 1]
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0"; [cite: 1]
-        const ADMIN_PASSWORD = "Hh907$$$"; // 👈 আপনার পছন্দমতো পাসওয়ার্ড বসিয়ে নেবেন
-
-        let supabaseClient = null;
-
-        // Auth Logic
-        function checkAdminPassword() {
-            const inputPass = document.getElementById('admin-pass-input').value;
-            const errEl = document.getElementById('login-err');
-
-            if (inputPass === ADMIN_PASSWORD) {
-                sessionStorage.setItem('isAdminLoggedIn', 'true');
-                errEl.classList.add('hidden');
-                initDashboard();
-            } else {
-                errEl.classList.remove('hidden');
-            }
-        }
-
-        function logoutAdmin() {
-            sessionStorage.removeItem('isAdminLoggedIn');
-            location.reload();
-        }
-
-        function initDashboard() {
-            // Direct Style Display Fix to avoid CSS clashes
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('admin-dashboard').style.display = 'block';
-
-            if (!supabaseClient) {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);[cite: 1]
-            }
-
-            loadSettings();
-            loadCategories();
-            loadVideos();
-        }
-
-        // Auto Login Check
-        if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
-            initDashboard();
-        }
-
-        // --- Settings Management ---
-        async function loadSettings() {
-            if (!supabaseClient) return;
-            const { data } = await supabaseClient.from('settings').select('*').eq('id', 1).maybeSingle();
-            if (data) {
-                document.getElementById('notice-input').value = data.notice || '';[cite: 1]
-                document.getElementById('telegram-input').value = data.telegram_link || '';[cite: 1]
-                document.getElementById('contact-input').value = data.contact_link || '';[cite: 1]
-            }
-        }
-
-        document.getElementById('settings-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const notice = document.getElementById('notice-input').value.trim();[cite: 1]
-            const telegram_link = document.getElementById('telegram-input').value.trim();[cite: 1]
-            const contact_link = document.getElementById('contact-input').value.trim();[cite: 1]
-
-            const { error } = await supabaseClient.from('settings').upsert({ id: 1, notice, telegram_link, contact_link }, { onConflict: 'id' });[cite: 1]
-            if (error) alert("Error: " + error.message);
-            else alert("Settings updated successfully!");[cite: 1]
-        };
-
-        // --- Category Management (With Rename & Delete) ---
-        async function loadCategories() {
-            if (!supabaseClient) return;
-            const { data } = await supabaseClient.from('categories').select('*');[cite: 1]
-            const categoriesList = data || [];
-            
-            const catSelect = document.getElementById('video-category');[cite: 1]
-            catSelect.innerHTML = '<option value="">None</option>';[cite: 1]
-            
-            const catContainer = document.getElementById('category-list');[cite: 1]
-            catContainer.innerHTML = '';[cite: 1]
-
-            categoriesList.forEach(cat => {
-                const opt = document.createElement('option');
-                opt.value = cat.name;[cite: 1]
-                opt.innerText = cat.name;[cite: 1]
-                catSelect.appendChild(opt);[cite: 1]
-
-                const badge = document.createElement('div');
-                badge.className = "bg-slate-950 border border-slate-800 text-xs text-slate-300 px-3 py-1.5 rounded-xl flex items-center gap-2";[cite: 1]
-                badge.innerHTML = `
-                    <span class="font-medium">${cat.name}</span>
-                    <button onclick="renameCategory(${cat.id}, '${cat.name}')" class="text-amber-400 hover:text-amber-300 transition ml-1 text-[11px]" title="Rename"><i class="fa-solid fa-pen"></i></button>
-                    <button onclick="deleteCategory(${cat.id})" class="text-red-400 hover:text-red-500 transition text-[11px]" title="Delete"><i class="fa-solid fa-xmark"></i></button>
-                `;
-                catContainer.appendChild(badge);[cite: 1]
-            });
-        }
-
-        document.getElementById('category-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('cat-name-input').value.trim();[cite: 1]
-            if(!name) return;
-            await supabaseClient.from('categories').insert([{ name }]);[cite: 1]
-            document.getElementById('cat-name-input').value = '';[cite: 1]
-            loadCategories();[cite: 1]
-        };
-
-        // Rename Category Function
-        async function renameCategory(id, currentName) {
-            const newName = prompt("ক্যাটাগরির নতুন নাম লিখুন:", currentName);
-            if (newName && newName.trim() !== "" && newName.trim() !== currentName) {
-                const { error } = await supabaseClient.from('categories').update({ name: newName.trim() }).eq('id', id);
-                if (error) alert("Error: " + error.message);
-                else {
-                    alert("ক্যাটাগরির নাম সফলভাবে পরিবর্তন হয়েছে!");
-                    loadCategories();
-                }
-            }
-        }
-
-        // Delete Category Function
-        async function deleteCategory(id) {
-            if (confirm("আপনি কি নিশ্চিত এই ক্যাটাগরি ডিলিট করতে চান?")) {[cite: 1]
-                await supabaseClient.from('categories').delete().eq('id', id);[cite: 1]
-                loadCategories();[cite: 1]
-            }
-        }
-
-        // --- Video Add, Edit & Delete Management ---
-        document.getElementById('video-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit-video-id').value;[cite: 1]
-            const title = document.getElementById('video-title').value.trim();[cite: 1]
-            const embed_code = document.getElementById('video-embed').value.trim();[cite: 1]
-            const thumbnail_url = document.getElementById('video-thumb').value.trim();[cite: 1]
-            const category = document.getElementById('video-category').value;[cite: 1]
-            const download_link = document.getElementById('video-download').value.trim();[cite: 1]
-
-            const payload = { title, embed_code, thumbnail_url, category, download_link };[cite: 1]
-
-            if (id) {
-                const { error } = await supabaseClient.from('videos').update(payload).eq('id', id);[cite: 1]
-                if (error) alert("Error: " + error.message);
-                else alert("Video Updated Successfully!");[cite: 1]
-            } else {
-                const { error } = await supabaseClient.from('videos').insert([payload]);[cite: 1]
-                if (error) alert("Error: " + error.message);
-                else alert("Video Added Successfully!");[cite: 1]
-            }
-
-            resetVideoForm();[cite: 1]
-            loadVideos();[cite: 1]
-        };
-
-        function editVideo(video) {
-            document.getElementById('edit-video-id').value = video.id;[cite: 1]
-            document.getElementById('video-title').value = video.title;[cite: 1]
-            document.getElementById('video-embed').value = video.embed_code;[cite: 1]
-            document.getElementById('video-thumb').value = video.thumbnail_url || '';[cite: 1]
-            document.getElementById('video-category').value = video.category || '';[cite: 1]
-            document.getElementById('video-download').value = video.download_link || '';[cite: 1]
-
-            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square text-amber-500"></i> Edit Video Details';[cite: 1]
-            document.getElementById('save-btn').innerText = "Update Video";[cite: 1]
-            document.getElementById('save-btn').className = "bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-xl text-xs transition shadow-lg shadow-amber-600/20";[cite: 1]
-            document.getElementById('cancel-edit-btn').classList.remove('hidden');[cite: 1]
-            
-            window.scrollTo({ top: document.getElementById('video-form').offsetTop - 20, behavior: 'smooth' });
-        }
-
-        function resetVideoForm() {
-            document.getElementById('video-form').reset();[cite: 1]
-            document.getElementById('edit-video-id').value = '';[cite: 1]
-            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-video text-emerald-500"></i> Add New Video';[cite: 1]
-            document.getElementById('save-btn').innerText = "Save Video";[cite: 1]
-            document.getElementById('save-btn').className = "bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl text-xs transition shadow-lg shadow-red-600/20";[cite: 1]
-            document.getElementById('cancel-edit-btn').classList.add('hidden');[cite: 1]
-        }
-
-        async function deleteVideo(id) {
-            if (confirm("আপনি কি নিশ্চিত এই ভিডিও ডিলিট করতে চান?")) {[cite: 1]
-                await supabaseClient.from('videos').delete().eq('id', id);[cite: 1]
-                loadVideos();[cite: 1]
-            }
-        }
-
-        async function loadVideos() {
-            if (!supabaseClient) return;
-            const { data } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });[cite: 1]
-            const list = document.getElementById('video-list');[cite: 1]
-            list.innerHTML = '';[cite: 1]
-
-            if (!data || data.length === 0) {
-                list.innerHTML = '<p class="text-slate-500 text-xs italic">No videos found in database.</p>';[cite: 1]
-                return;
-            }
-
-            data.forEach(v => {
-                const item = document.createElement('div');
-                item.className = "bg-slate-950 p-3.5 rounded-xl border border-slate-800/80 flex justify-between items-center gap-4 hover:border-slate-700 transition";[cite: 1]
-                item.innerHTML = `
-                    <div class="flex-1 truncate">
-                        <h4 class="font-semibold text-xs truncate text-slate-200">${v.title}</h4>[cite: 1]
-                        <span class="text-[10px] text-slate-500 font-mono">${v.category || 'No Category'}</span>[cite: 1]
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <button onclick='editVideo(${JSON.stringify(v).replace(/'/g, "&apos;")})' class="bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-600/30 text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1">
-                            <i class="fa-solid fa-pen text-[10px]"></i> Edit
-                        </button>[cite: 1]
-                        <button onclick="deleteVideo(${v.id})" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-600/30 text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1">
-                            <i class="fa-solid fa-trash text-[10px]"></i> Delete
-                        </button>[cite: 1]
-                    </div>
-                `;[cite: 1]
-                list.appendChild(item);[cite: 1]
-            });
-        }
-    </script>
+    async function deleteVideo(id) {
+      if (confirm('আপনি কি নিশ্চিত এই ভিডিও ডিলিট করতে চান?')) {
+        const { error } = await supabaseClient.from('videos').delete().eq('id', id);
+        if (error) alert('Error: ' + error.message);
+        else loadVideos();
+      }
+    }
+  </script>
 </body>
 </html>
