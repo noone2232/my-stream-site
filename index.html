@@ -1,36 +1,75 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="bn" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DesiTube - Watch Trending Videos</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .video-card:hover { transform: translateY(-4px); transition: all 0.2s ease-in-out; }
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .animate-marquee { display: inline-block; white-space: nowrap; animation: marquee 15s linear infinite; }
     </style>
 </head>
-<body class="bg-gray-950 text-white font-sans min-h-screen">
+<body class="bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white font-sans min-h-screen transition-colors duration-200">
+
+    <!-- Top Banner Promo (Telegram Banner Strategy) -->
+    <div id="telegram-banner-container" class="hidden bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-xs md:text-sm py-2 px-4 text-center font-medium flex justify-between items-center shadow-md">
+        <span class="truncate pr-2"><i class="fa-brands fa-telegram text-lg mr-1 animate-pulse"></i> সব নতুন ও প্রাইভেট ভিডিও পেতে আমাদের টেলিগ্রাম চ্যানেলে জয়েন করুন!</span>
+        <a id="telegram-link-btn" href="#" target="_blank" class="bg-white text-blue-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-gray-100 transition shrink-0">Join Telegram</a>
+    </div>
+
+    <!-- Scrolling Notice Bar -->
+    <div id="notice-container" class="hidden bg-red-600 text-white text-xs md:text-sm py-1 px-4 overflow-hidden relative flex items-center shadow-inner">
+        <span class="font-bold bg-red-800 px-2 py-0.5 rounded mr-2 text-[10px] tracking-wider shrink-0 uppercase">Notice</span>
+        <div class="overflow-hidden w-full">
+            <p id="notice-text" class="animate-marquee"></p>
+        </div>
+    </div>
 
     <!-- Header / Navbar -->
-    <header class="flex justify-between items-center px-4 md:px-8 py-3 bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
+    <header class="flex flex-wrap justify-between items-center px-4 md:px-8 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 shadow-sm">
         <div class="flex items-center space-x-2 cursor-pointer" onclick="window.location.reload()">
             <i class="fa-brands fa-youtube text-red-600 text-3xl md:text-4xl"></i>
             <span class="text-xl md:text-2xl font-bold tracking-tight">Desi<span class="text-red-500">Tube</span></span>
         </div>
-        <div class="w-1/2 md:w-1/3">
-            <input type="text" id="search-input" onkeyup="searchVideos()" placeholder="Search videos..." class="w-full bg-gray-800 text-sm rounded-full py-2 px-4 border border-gray-700 focus:outline-none focus:border-red-500">
+
+        <!-- Search Bar -->
+        <div class="w-full md:w-1/3 my-2 md:my-0 order-3 md:order-2">
+            <input type="text" id="search-input" onkeyup="searchVideos()" placeholder="Search videos..." class="w-full bg-gray-100 dark:bg-gray-800 text-sm rounded-full py-2 px-4 border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-red-500 text-gray-900 dark:text-white">
+        </div>
+
+        <!-- Controls: Contact & Theme Toggle -->
+        <div class="flex items-center space-x-3 order-2 md:order-3">
+            <a id="contact-btn" href="#" target="_blank" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded-full flex items-center gap-1 transition">
+                <i class="fa-solid fa-headset"></i> Contact
+            </a>
+            <button onclick="toggleTheme()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-yellow-400 hover:opacity-80 transition">
+                <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+            </button>
         </div>
     </header>
 
-    <!-- Main Container (YouTube Style Video Grid) -->
+    <!-- Categories Filter Bar -->
+    <nav class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-2">
+        <div id="category-bar" class="flex gap-2 overflow-x-auto pb-1 max-w-7xl mx-auto scrollbar-none">
+            <button onclick="filterCategory('All')" class="category-btn bg-red-600 text-white text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 shadow-sm transition">All</button>
+            <!-- Categories will be loaded dynamically -->
+        </div>
+    </nav>
+
+    <!-- Main Container -->
     <main class="max-w-7xl mx-auto p-4 md:p-6">
         
         <!-- Video Grid Feed -->
-        <div id="video-feed" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <!-- Videos and Interstitial Ads will be dynamically loaded here -->
-        </div>
+        <div id="video-feed" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
 
         <div id="loading-spinner" class="text-center py-10 text-gray-400">
             <i class="fa-solid fa-spinner fa-spin text-3xl mb-2 text-red-500"></i>
@@ -38,67 +77,156 @@
         </div>
     </main>
 
-    <!-- Video Modal Player (Pop-up Player on Video Click) -->
-    <div id="player-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex justify-center items-center p-2 md:p-4">
-        <div class="bg-gray-900 w-full max-w-4xl rounded-2xl overflow-hidden border border-gray-800 shadow-2xl relative flex flex-col">
+    <!-- Video Modal Player -->
+    <div id="player-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex justify-center items-center p-2 md:p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-gray-900 w-full max-w-4xl rounded-2xl overflow-hidden border border-gray-300 dark:border-gray-800 shadow-2xl relative flex flex-col my-auto max-h-[95vh]">
             
-            <!-- Modal Header / Close Button -->
-            <div class="flex justify-between items-center p-3 border-b border-gray-800 bg-gray-900">
-                <h3 id="modal-video-title" class="text-sm md:text-base font-semibold truncate pr-4 text-gray-200">Video Player</h3>
-                <button onclick="closePlayer()" class="text-gray-400 hover:text-white bg-gray-800 hover:bg-red-600 w-8 h-8 rounded-full flex items-center justify-center transition">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-800">
+                <h3 id="modal-video-title" class="text-sm md:text-base font-semibold truncate pr-4 text-gray-800 dark:text-gray-200">Video Player</h3>
+                <button onclick="closePlayer()" class="text-gray-400 hover:text-white bg-gray-200 dark:bg-gray-800 hover:bg-red-600 w-8 h-8 rounded-full flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <!-- Player Box with 2-Click Unlock System -->
-            <div class="relative w-full aspect-video bg-black">
+            <!-- Modal Content Wrapper (Scrollable if ad is big) -->
+            <div class="overflow-y-auto">
                 
-                <!-- 2-Click Unlock Overlay -->
-                <div id="unlock-overlay" class="absolute inset-0 bg-black/95 z-20 flex flex-col items-center justify-center text-center p-4">
-                    <i class="fa-solid fa-lock text-red-500 text-4xl md:text-5xl mb-3 animate-bounce"></i>
-                    <h2 class="text-lg md:text-xl font-bold mb-1">ভিডিওটি প্লে করতে আনলক করুন</h2>
-                    <p class="text-gray-400 text-xs md:text-sm mb-5">নিচের বাটনে ২টি ক্লিক সম্পন্ন করে ভিডিও চালু করুন</p>
-                    
-                    <button id="unlock-btn" onclick="handleUnlock()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition">
-                        <span id="btn-text">Unlock Video (Step 1/2)</span>
-                    </button>
+                <!-- 🎯 TOP BANNER AD PLACE (Player-এর উপরে) -->
+                <!-- পছন্দমতো যেকোনো সাইজের Banner Ad Script এখানে বসান (e.g. 728x90, 468x60, 320x50) -->
+                <div class="p-1 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-b border-gray-200 dark:border-gray-800 min-h-[50px]">
+                    <span class="text-[10px] text-gray-400 uppercase tracking-widest">[ Top Player Banner Ad Place ]</span>
                 </div>
 
-                <!-- Embed Player (Streamtape / Doodstream) -->
-                <iframe id="modal-iframe" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
-            </div>
+                <!-- Player Box with 2-Click Unlock System -->
+                <div class="relative w-full aspect-video bg-black">
+                    <div id="unlock-overlay" class="absolute inset-0 bg-black/95 z-20 flex flex-col items-center justify-center text-center p-4">
+                        <i class="fa-solid fa-lock text-red-500 text-4xl md:text-5xl mb-3 animate-bounce"></i>
+                        <h2 class="text-lg md:text-xl font-bold mb-1 text-white">ভিডিওটি প্লে করতে আনলক করুন</h2>
+                        <p class="text-gray-400 text-xs md:text-sm mb-5">নিচের বাটনে ২টি ক্লিক সম্পন্ন করে ভিডিও চালু করুন</p>
+                        <button id="unlock-btn" onclick="handleUnlock()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition">
+                            <span id="btn-text">Unlock Video (Step 1/2)</span>
+                        </button>
+                    </div>
 
-            <!-- Modal Footer (Download Button & Extra Link) -->
-            <div class="p-3 bg-gray-900 border-t border-gray-800 flex justify-between items-center">
-                <span class="text-xs text-gray-400">DesiTube Video Player</span>
-                <a id="modal-download-btn" href="#" target="_blank" class="bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition">
-                    <i class="fa-solid fa-download"></i> Fast Download (HD)
-                </a>
+                    <iframe id="modal-iframe" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+                </div>
+
+                <!-- Download Button Footer -->
+                <div id="download-container" class="p-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center hidden">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Download Link Available</span>
+                    <a id="modal-download-btn" href="#" target="_blank" class="bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition">
+                        <i class="fa-solid fa-download"></i> Download / Access Content
+                    </a>
+                </div>
+
+                <!-- 🎯 BOTTOM BANNER AD PLACE (Player-এর নিচে) -->
+                <!-- পছন্দমতো যেকোনো সাইজের Banner Ad Script এখানে বসান (e.g. 728x90, 300x250) -->
+                <div class="p-2 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-t border-gray-200 dark:border-gray-800 min-h-[60px]">
+                    <span class="text-[10px] text-gray-400 uppercase tracking-widest">[ Bottom Player Banner Ad Place ]</span>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <!-- JavaScript Engine -->
+    <!-- JavaScript Logic -->
     <script>
-        // --- ⚙️ CONFIGURATION (আপনার আসল তথ্যগুলো এখানে বসাবেন) ---
+        // --- ⚙️ CONFIGURATION ---
         const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0"; // আপনার anon public key বসান
-        const ADSTERRA_DIRECT_LINK = "https://consistinvention.com/tvprnh1m8?key=04e934389df942532a60c6b975af665a"; // আপনার Adsterra Direct Link বসান
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0"; 
+        const ADSTERRA_DIRECT_LINK = "https://consistinvention.com/tvprnh1m8?key=04e934389df942532a60c6b975af665a"; 
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let allVideosData = [];
         let unlockClickCount = 0;
-        let currentVideoDownloadLink = "";
+        let selectedCategory = "All";
 
-        // Fetch All Videos from Supabase Database
+        // Auto Generate Thumbnail from Video Embed URL if Image Link is missing
+        function getAutoThumbnail(embedUrl) {
+            if (!embedUrl) return 'https://via.placeholder.com/640x360?text=No+Thumbnail';
+            if (embedUrl.includes('streamtape')) {
+                const id = embedUrl.split('/e/')[1]?.split('/')[0] || embedUrl.split('/v/')[1]?.split('/')[0];
+                return id ? `https://thumb.streamtape.com/image/${id}.png` : 'https://via.placeholder.com/640x360?text=Streamtape+Video';
+            }
+            if (embedUrl.includes('dood')) {
+                return 'https://via.placeholder.com/640x360/0f172a/ef4444?text=Play+DoodStream+Video';
+            }
+            return 'https://via.placeholder.com/640x360/0f172a/ffffff?text=Play+Video';
+        }
+
+        // Dark / Light Theme Controller
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = "fa-solid fa-sun text-lg";
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                icon.className = "fa-solid fa-moon text-lg";
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        if (localStorage.getItem('theme') === 'light') toggleTheme();
+
+        // Load Settings (Notice, Telegram, Contact)
+        async function fetchSettings() {
+            const { data } = await supabaseClient.from('settings').select('*').single();
+            if (data) {
+                if (data.notice && data.notice.trim() !== "") {
+                    document.getElementById('notice-text').innerText = data.notice;
+                    document.getElementById('notice-container').classList.remove('hidden');
+                }
+                if (data.telegram_link && data.telegram_link.trim() !== "") {
+                    document.getElementById('telegram-link-btn').href = data.telegram_link;
+                    document.getElementById('telegram-banner-container').classList.remove('hidden');
+                }
+                if (data.contact_link && data.contact_link.trim() !== "") {
+                    document.getElementById('contact-btn').href = data.contact_link;
+                    document.getElementById('contact-btn').classList.remove('hidden');
+                }
+            }
+        }
+
+        // Load Categories
+        async function fetchCategories() {
+            const { data } = await supabaseClient.from('categories').select('*');
+            const bar = document.getElementById('category-bar');
+            if (data) {
+                data.forEach(cat => {
+                    const btn = document.createElement('button');
+                    btn.className = "category-btn bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";
+                    btn.innerText = cat.name;
+                    btn.onclick = () => filterCategory(cat.name);
+                    bar.appendChild(btn);
+                });
+            }
+        }
+
+        // Filter Videos by Category
+        function filterCategory(catName) {
+            selectedCategory = catName;
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                if (btn.innerText === catName) {
+                    btn.className = "category-btn bg-red-600 text-white text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 shadow-sm transition";
+                } else {
+                    btn.className = "category-btn bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";
+                }
+            });
+            const filtered = selectedCategory === "All" ? allVideosData : allVideosData.filter(v => v.category === selectedCategory);
+            renderVideoGrid(filtered);
+        }
+
+        // Fetch Videos
         async function fetchVideos() {
             const spinner = document.getElementById('loading-spinner');
             const { data, error } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });
 
             if (error) {
-                console.error("Database Error:", error);
-                spinner.innerHTML = '<p class="text-red-500">Failed to load videos. Please check credentials.</p>';
+                spinner.innerHTML = '<p class="text-red-500">Failed to load videos.</p>';
                 return;
             }
 
@@ -107,44 +235,46 @@
             renderVideoGrid(allVideosData);
         }
 
-        // Render YouTube Style Grid + Interstitial Ad Banners after every 4 videos
+        // Render Video Grid + Ad Banners
         function renderVideoGrid(videos) {
             const feed = document.getElementById('video-feed');
             feed.innerHTML = '';
 
             if (videos.length === 0) {
-                feed.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">No videos available yet.</p>';
+                feed.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">No videos found.</p>';
                 return;
             }
 
             videos.forEach((video, index) => {
-                // Create Video Card Component
                 const card = document.createElement('div');
-                card.className = "video-card bg-gray-900 border border-gray-800 rounded-xl overflow-hidden cursor-pointer shadow-md flex flex-col justify-between";
+                card.className = "video-card bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden cursor-pointer shadow-md flex flex-col justify-between";
                 card.onclick = () => openPlayer(video);
+
+                const thumb = video.thumbnail_url && video.thumbnail_url.trim() !== "" ? video.thumbnail_url : getAutoThumbnail(video.embed_code);
 
                 card.innerHTML = `
                     <div class="relative w-full aspect-video bg-gray-800 overflow-hidden">
-                        <img src="${video.thumbnail_url}" alt="${video.title}" class="w-full h-full object-cover">
+                        <img src="${thumb}" alt="${video.title}" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                             <i class="fa-solid fa-circle-play text-red-500 text-5xl"></i>
                         </div>
+                        ${video.category ? `<span class="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">${video.category}</span>` : ''}
                     </div>
                     <div class="p-3">
-                        <h3 class="text-sm font-semibold text-gray-100 line-clamp-2 leading-snug">${video.title}</h3>
+                        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100 line-clamp-2 leading-snug">${video.title}</h3>
                     </div>
                 `;
                 feed.appendChild(card);
 
-                // Insert Banner Ad Block after every 4 videos
+                // Insert Interstitial Banner Ad Block after every 4 videos
                 if ((index + 1) % 4 === 0) {
                     const adCard = document.createElement('div');
-                    adCard.className = "col-span-full bg-gray-900 border border-red-900/30 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";
+                    adCard.className = "col-span-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";
                     adCard.innerHTML = `
-                        <span class="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Sponsored Advertisement</span>
-                        <div class="w-full text-xs text-gray-400 py-4 bg-gray-950/60 rounded border border-gray-800">
-                            <!-- Adsterra / Monetag Native Banner Ad Code Places Here -->
-                            [ Adsterra Native Banner Ad Block ]
+                        <span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>
+                        <!-- 🎯 BANNER AD CODE PLACE (Native Banner / 300x250 / 728x90) -->
+                        <div class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
+                            [ Adsterra Native Banner Block ]
                         </div>
                     `;
                     feed.appendChild(adCard);
@@ -157,29 +287,29 @@
             document.getElementById('modal-iframe').src = video.embed_code;
             document.getElementById('modal-video-title').innerText = video.title;
             
-            currentVideoDownloadLink = video.download_link || ADSTERRA_DIRECT_LINK;
-            document.getElementById('modal-download-btn').href = currentVideoDownloadLink;
+            const dlContainer = document.getElementById('download-container');
+            if (video.download_link && video.download_link.trim() !== "") {
+                document.getElementById('modal-download-btn').href = video.download_link;
+                dlContainer.classList.remove('hidden');
+            } else {
+                dlContainer.classList.add('hidden');
+            }
 
-            // Reset 2-Click Unlock System
             unlockClickCount = 0;
             document.getElementById('unlock-overlay').style.display = 'flex';
             document.getElementById('btn-text').innerText = "Unlock Video (Step 1/2)";
             document.getElementById('unlock-btn').className = "bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition";
 
-            // Show Modal
             document.getElementById('player-modal').classList.remove('hidden');
         }
 
-        // Close Modal Player
         function closePlayer() {
             document.getElementById('player-modal').classList.add('hidden');
-            document.getElementById('modal-iframe').src = ""; // Stop video playback
+            document.getElementById('modal-iframe').src = ""; 
         }
 
-        // 2-Click Unlock Logic (Opens Adsterra Direct Link)
         function handleUnlock() {
             unlockClickCount++;
-            
             if (unlockClickCount === 1) {
                 window.open(ADSTERRA_DIRECT_LINK, '_blank');
                 document.getElementById('btn-text').innerText = "Click Again to Play (Step 2/2)";
@@ -190,14 +320,14 @@
             }
         }
 
-        // Real-time Search Function
         function searchVideos() {
             const query = document.getElementById('search-input').value.toLowerCase();
             const filtered = allVideosData.filter(v => v.title.toLowerCase().includes(query));
             renderVideoGrid(filtered);
         }
 
-        // Load data on start
+        fetchSettings();
+        fetchCategories();
         fetchVideos();
     </script>
 </body>
