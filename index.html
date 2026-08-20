@@ -93,7 +93,6 @@
             <div class="overflow-y-auto">
                 
                 <!-- 🎯 TOP BANNER AD PLACE (Player-এর উপরে) -->
-                <!-- পছন্দমতো যেকোনো সাইজের Banner Ad Script এখানে বসান (e.g. 728x90, 468x60, 320x50) -->
                 <div class="p-1 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-b border-gray-200 dark:border-gray-800 min-h-[50px]">
                     <span class="text-[10px] text-gray-400 uppercase tracking-widest">[ Top Player Banner Ad Place ]</span>
                 </div>
@@ -121,7 +120,6 @@
                 </div>
 
                 <!-- 🎯 BOTTOM BANNER AD PLACE (Player-এর নিচে) -->
-                <!-- পছন্দমতো যেকোনো সাইজের Banner Ad Script এখানে বসান (e.g. 728x90, 300x250) -->
                 <div class="p-2 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-t border-gray-200 dark:border-gray-800 min-h-[60px]">
                     <span class="text-[10px] text-gray-400 uppercase tracking-widest">[ Bottom Player Banner Ad Place ]</span>
                 </div>
@@ -142,7 +140,6 @@
         let allVideosData = [];[cite: 6]
         let unlockClickCount = 0;[cite: 6]
         let selectedCategory = "All";[cite: 6]
-        let currentEmbedUrl = ""; // আনলকের পর ব্যবহারের জন্য ভিডিও লিংক জমা রাখার ভ্যারিয়েবল
 
         // Auto Generate Thumbnail from Video Embed URL if Image Link is missing
         function getAutoThumbnail(embedUrl) {
@@ -283,10 +280,12 @@
             });
         }
 
-        // Open Modal Player (FIXED)
+        // Open Modal Player
         function openPlayer(video) {
-            currentEmbedUrl = video.embed_code; // ভিডিও ইউআরএল গ্লোবালি জমা রাখা
-            document.getElementById('modal-iframe').src = ""; // আনলকের আগে প্লেয়ার খালি রাখা হবে
+            const iframe = document.getElementById('modal-iframe');
+            iframe.src = ""; 
+            iframe.setAttribute('data-embed', video.embed_code); // লিংক কাস্টম এট্রিবিউটে জমা রাখা হলো
+
             document.getElementById('modal-video-title').innerText = video.title;[cite: 6]
             
             const dlContainer = document.getElementById('download-container');[cite: 6]
@@ -306,12 +305,13 @@
         }
 
         function closePlayer() {
+            const iframe = document.getElementById('modal-iframe');
+            iframe.src = "";
+            iframe.removeAttribute('data-embed');
             document.getElementById('player-modal').classList.add('hidden');[cite: 6]
-            document.getElementById('modal-iframe').src = "";[cite: 6]
-            currentEmbedUrl = "";
         }
 
-        // Handle Unlock Logic (FIXED)
+        // Handle Unlock Logic
         function handleUnlock() {
             unlockClickCount++;[cite: 6]
             if (unlockClickCount === 1) {[cite: 6]
@@ -321,8 +321,10 @@
             } else if (unlockClickCount >= 2) {[cite: 6]
                 window.open(ADSTERRA_DIRECT_LINK, '_blank');[cite: 6]
                 document.getElementById('unlock-overlay').style.display = 'none';[cite: 6]
-                // ২টি ক্লিক সম্পন্ন হলেই ভিডিওটি লোড এবং প্লে হবে
-                document.getElementById('modal-iframe').src = currentEmbedUrl;
+                
+                // আনলকের পরই কেবল আসল ভিডিও এর সাথে প্লে হওয়া শুরু করবে
+                const iframe = document.getElementById('modal-iframe');
+                iframe.src = iframe.getAttribute('data-embed');
             }
         }
 
