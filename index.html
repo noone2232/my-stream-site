@@ -10,7 +10,8 @@
             darkMode: 'class',
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase CDN JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .video-card:hover { transform: translateY(-4px); transition: all 0.2s ease-in-out; }
@@ -135,13 +136,22 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0";[cite: 6] 
         const ADSTERRA_DIRECT_LINK = "https://consistinvention.com/tvprnh1m8?key=04e934389df942532a60c6b975af665a";[cite: 6] 
 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);[cite: 6]
+        // Safe Supabase Initialization
+        let supabaseClient = null;
+        try {
+            if (typeof supabase !== 'undefined') {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch(e) {
+            console.error("Supabase Init Error: ", e);
+        }
 
         let allVideosData = [];[cite: 6]
         let unlockClickCount = 0;[cite: 6]
         let selectedCategory = "All";[cite: 6]
+        let currentEmbedUrl = "";
 
-        // Auto Generate Thumbnail from Video Embed URL if Image Link is missing
+        // Auto Generate Thumbnail from Video Embed URL
         function getAutoThumbnail(embedUrl) {
             if (!embedUrl) return 'https://via.placeholder.com/640x360?text=No+Thumbnail';[cite: 6]
             if (embedUrl.includes('streamtape')) {[cite: 6]
@@ -172,35 +182,45 @@
 
         // Load Settings (Notice, Telegram, Contact)
         async function fetchSettings() {
-            const { data } = await supabaseClient.from('settings').select('*').single();[cite: 6]
-            if (data) {[cite: 6]
-                if (data.notice && data.notice.trim() !== "") {[cite: 6]
-                    document.getElementById('notice-text').innerText = data.notice;[cite: 6]
-                    document.getElementById('notice-container').classList.remove('hidden');[cite: 6]
+            if (!supabaseClient) return;
+            try {
+                const { data } = await supabaseClient.from('settings').select('*').single();[cite: 6]
+                if (data) {[cite: 6]
+                    if (data.notice && data.notice.trim() !== "") {[cite: 6]
+                        document.getElementById('notice-text').innerText = data.notice;[cite: 6]
+                        document.getElementById('notice-container').classList.remove('hidden');[cite: 6]
+                    }
+                    if (data.telegram_link && data.telegram_link.trim() !== "") {[cite: 6]
+                        document.getElementById('telegram-link-btn').href = data.telegram_link;[cite: 6]
+                        document.getElementById('telegram-banner-container').classList.remove('hidden');[cite: 6]
+                    }
+                    if (data.contact_link && data.contact_link.trim() !== "") {[cite: 6]
+                        document.getElementById('contact-btn').href = data.contact_link;[cite: 6]
+                        document.getElementById('contact-btn').classList.remove('hidden');[cite: 6]
+                    }
                 }
-                if (data.telegram_link && data.telegram_link.trim() !== "") {[cite: 6]
-                    document.getElementById('telegram-link-btn').href = data.telegram_link;[cite: 6]
-                    document.getElementById('telegram-banner-container').classList.remove('hidden');[cite: 6]
-                }
-                if (data.contact_link && data.contact_link.trim() !== "") {[cite: 6]
-                    document.getElementById('contact-btn').href = data.contact_link;[cite: 6]
-                    document.getElementById('contact-btn').classList.remove('hidden');[cite: 6]
-                }
+            } catch (err) {
+                console.log(err);
             }
         }
 
         // Load Categories
         async function fetchCategories() {
-            const { data } = await supabaseClient.from('categories').select('*');[cite: 6]
-            const bar = document.getElementById('category-bar');[cite: 6]
-            if (data) {[cite: 6]
-                data.forEach(cat => {[cite: 6]
-                    const btn = document.createElement('button');[cite: 6]
-                    btn.className = "category-btn bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";[cite: 6]
-                    btn.innerText = cat.name;[cite: 6]
-                    btn.onclick = () => filterCategory(cat.name);[cite: 6]
-                    bar.appendChild(btn);[cite: 6]
-                });
+            if (!supabaseClient) return;
+            try {
+                const { data } = await supabaseClient.from('categories').select('*');[cite: 6]
+                const bar = document.getElementById('category-bar');[cite: 6]
+                if (data) {[cite: 6]
+                    data.forEach(cat => {[cite: 6]
+                        const btn = document.createElement('button');[cite: 6]
+                        btn.className = "category-btn bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";[cite: 6]
+                        btn.innerText = cat.name;[cite: 6]
+                        btn.onclick = () => filterCategory(cat.name);[cite: 6]
+                        bar.appendChild(btn);[cite: 6]
+                    });
+                }
+            } catch(err) {
+                console.log(err);
             }
         }
 
@@ -221,16 +241,25 @@
         // Fetch Videos
         async function fetchVideos() {
             const spinner = document.getElementById('loading-spinner');[cite: 6]
-            const { data, error } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });[cite: 6]
-
-            if (error) {[cite: 6]
-                spinner.innerHTML = '<p class="text-red-500">Failed to load videos.</p>';[cite: 6]
+            if (!supabaseClient) {
+                spinner.innerHTML = '<p class="text-red-500">Database Connection Error. Please refresh.</p>';
                 return;
             }
 
-            allVideosData = data;[cite: 6]
-            spinner.style.display = 'none';[cite: 6]
-            renderVideoGrid(allVideosData);[cite: 6]
+            try {
+                const { data, error } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });[cite: 6]
+
+                if (error) {[cite: 6]
+                    spinner.innerHTML = '<p class="text-red-500">Failed to load videos.</p>';[cite: 6]
+                    return;
+                }
+
+                allVideosData = data;[cite: 6]
+                spinner.style.display = 'none';[cite: 6]
+                renderVideoGrid(allVideosData);[cite: 6]
+            } catch(e) {
+                spinner.innerHTML = '<p class="text-red-500">Something went wrong. Please reload.</p>';
+            }
         }
 
         // Render Video Grid + Ad Banners
@@ -270,7 +299,6 @@
                     adCard.className = "col-span-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";[cite: 6]
                     adCard.innerHTML = `
                         <span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>
-                        <!-- 🎯 BANNER AD CODE PLACE (Native Banner / 300x250 / 728x90) -->
                         <div class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
                             [ Adsterra Native Banner Block ]
                         </div>
@@ -282,10 +310,8 @@
 
         // Open Modal Player
         function openPlayer(video) {
-            const iframe = document.getElementById('modal-iframe');
-            iframe.src = ""; 
-            iframe.setAttribute('data-embed', video.embed_code); // লিংক কাস্টম এট্রিবিউটে জমা রাখা হলো
-
+            currentEmbedUrl = video.embed_code;
+            document.getElementById('modal-iframe').src = ""; // আনলকের আগে ভিডিও লোড হবে না
             document.getElementById('modal-video-title').innerText = video.title;[cite: 6]
             
             const dlContainer = document.getElementById('download-container');[cite: 6]
@@ -305,10 +331,9 @@
         }
 
         function closePlayer() {
-            const iframe = document.getElementById('modal-iframe');
-            iframe.src = "";
-            iframe.removeAttribute('data-embed');
             document.getElementById('player-modal').classList.add('hidden');[cite: 6]
+            document.getElementById('modal-iframe').src = "";[cite: 6]
+            currentEmbedUrl = "";
         }
 
         // Handle Unlock Logic
@@ -322,9 +347,8 @@
                 window.open(ADSTERRA_DIRECT_LINK, '_blank');[cite: 6]
                 document.getElementById('unlock-overlay').style.display = 'none';[cite: 6]
                 
-                // আনলকের পরই কেবল আসল ভিডিও এর সাথে প্লে হওয়া শুরু করবে
-                const iframe = document.getElementById('modal-iframe');
-                iframe.src = iframe.getAttribute('data-embed');
+                // আনলকের পরই শুধু ভিডিও চালু হবে
+                document.getElementById('modal-iframe').src = currentEmbedUrl;
             }
         }
 
@@ -334,9 +358,12 @@
             renderVideoGrid(filtered);[cite: 6]
         }
 
-        fetchSettings();[cite: 6]
-        fetchCategories();[cite: 6]
-        fetchVideos();[cite: 6]
+        // Initialize Functions on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchSettings();[cite: 6]
+            fetchCategories();[cite: 6]
+            fetchVideos();[cite: 6]
+        });
     </script>
 </body>
 </html>
