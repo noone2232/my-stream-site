@@ -3,155 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StreamHub - Super Admin Panel</title>
+    <title>DesiTube - Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-950 text-white font-sans min-h-screen">
+<body class="bg-gray-900 text-white font-sans p-4 md:p-8 min-h-screen">
 
-    <!-- Admin Header -->
-    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-        <div class="flex items-center space-x-3">
-            <i class="fa-solid fa-user-shield text-red-500 text-2xl"></i>
-            <h1 class="text-xl font-bold tracking-wide">StreamHub Admin Control Panel</h1>
+    <div class="max-w-5xl mx-auto space-y-8">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center border-b border-gray-800 pb-4">
+            <h1 class="text-2xl font-bold text-red-500 flex items-center gap-2">
+                <i class="fa-solid fa-sliders"></i> DesiTube Admin Panel
+            </h1>
+            <a href="/" target="_blank" class="bg-gray-800 hover:bg-gray-700 text-xs px-3 py-2 rounded-lg transition">View Website</a>
         </div>
-        <a href="index.html" target="_blank" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm py-2 px-4 rounded-lg transition">
-            <i class="fa-solid fa-external-link-alt mr-1"></i> Visit Website
-        </a>
-    </header>
 
-    <div class="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        <!-- Video Upload Form (Left Side) -->
-        <div class="lg:col-span-1 bg-gray-900 p-6 rounded-2xl border border-gray-800 h-fit shadow-xl">
-            <h2 class="text-lg font-bold mb-4 text-red-400 flex items-center gap-2">
-                <i class="fa-solid fa-plus-circle"></i> Add New Video
-            </h2>
-
-            <form id="upload-form" class="space-y-4">
+        <!-- 1. Site Settings Section (Notice, Telegram, Contact) -->
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md">
+            <h2 class="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2"><i class="fa-solid fa-gear text-yellow-500"></i> Site Settings</h2>
+            <form id="settings-form" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Video Title</label>
-                    <input type="text" id="v-title" required placeholder="Enter video title..." class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500">
+                    <label class="block text-xs font-semibold mb-1 text-gray-400">Marquee Notice Text (খালি রাখলে সাইটে দেখাবে না)</label>
+                    <input type="text" id="notice-input" placeholder="যেমন: নতুন সব ভিডিও দেখতে আমাদের সাথে থাকুন..." class="w-full bg-gray-900 text-sm rounded p-2.5 border border-gray-700 focus:outline-none focus:border-red-500">
                 </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Doodstream / Streamtape Embed Link</label>
-                    <input type="url" id="v-embed" required placeholder="https://doodstream.com/e/xxxx" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold mb-1 text-gray-400">Telegram Channel Link</label>
+                        <input type="url" id="telegram-input" placeholder="https://t.me/yourchannel" class="w-full bg-gray-900 text-sm rounded p-2.5 border border-gray-700 focus:outline-none focus:border-red-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1 text-gray-400">Contact Link (Telegram/WhatsApp/Email)</label>
+                        <input type="text" id="contact-input" placeholder="https://t.me/yourusername" class="w-full bg-gray-900 text-sm rounded p-2.5 border border-gray-700 focus:outline-none focus:border-red-500">
+                    </div>
                 </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Thumbnail Image URL (ImgBB / Direct Link)</label>
-                    <input type="url" id="v-thumb" required placeholder="https://i.ibb.co/xxxx/image.jpg" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Adsterra Download Link (Optional)</label>
-                    <input type="url" id="v-download" placeholder="Your Direct Link here..." class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500">
-                </div>
-
-                <button type="submit" id="submit-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg shadow-lg transition flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> Publish Video
-                </button>
+                <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition">Save Settings</button>
             </form>
         </div>
 
-        <!-- Manage Uploaded Videos (Right Side) -->
-        <div class="lg:col-span-2 bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-gray-200 flex items-center gap-2">
-                    <i class="fa-solid fa-list-check"></i> Manage Videos
-                </h2>
-                <button onclick="loadAdminVideos()" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-md text-gray-300">
-                    <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
-                </button>
-            </div>
+        <!-- 2. Category Management Section -->
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md">
+            <h2 class="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2"><i class="fa-solid fa-list text-blue-500"></i> Manage Categories</h2>
+            <form id="category-form" class="flex gap-2 mb-4">
+                <input type="text" id="cat-name-input" placeholder="যেমন: দেশী, Indian, Others" class="flex-1 bg-gray-900 text-sm rounded p-2.5 border border-gray-700 focus:outline-none focus:border-red-500" required>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition">Add Category</button>
+            </form>
+            <div id="category-list" class="flex flex-wrap gap-2"></div>
+        </div>
 
-            <div id="admin-video-list" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                <!-- Dynamic Video List Loaded Here -->
-            </div>
+        <!-- 3. Video Add / Edit Section -->
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md">
+            <h2 id="form-title" class="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2"><i class="fa-solid fa-video text-green-500"></i> Add New Video</h2>
+            <form id="video-form" class="space-y-4">
+                <input type="hidden" id="edit-video-id">
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-gray-400">Video Title *</label>
+                    <input type="text" id="video-title" placeholder="Video title here..." class="w-full bg-gray-900 text-sm rounded p-2.5 border border-gray-700 focus:outline-none focus:border-red-500" required>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-gray-400">Embed Video Link * (Streamtape / Doodstream / Iframe)</label>
+                    <input type="text" id="video-embed" placeholder="https://streamtape.com/e/..." class="w-full bg-gray-900 text-sm rounded p-2.5 border border-gray-700 focus:outline-none focus:border-red-500" required>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold mb-1 text-gray-400">Thumbnail Image Link (Optional - খালি রাখলে অটো থাম্বনেইল হবে)</label>
+                        <input type="url" id="video-thumb" placeholder="https://..." class="w-full bg-gray-900 text-sm rounded p-2.5 border border-gray-700 focus:outline-none focus:border-red-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1 text-gray-400">Category (Optional)</label>
+                        <select id="video-category" class="w-full bg-gray-900 text-sm rounded p-2.5 border border-gray-700 focus:outline-none focus:border-red-500 text-gray-300">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-gray-400">Download Button Link (Optional - Adsterra Direct Link/Telegram Link)</label>
+                    <input type="text" id="video-download" placeholder="খালি রাখলে ভিডিওতে ডাউনলোড বাটন দেখাবে না" class="w-full bg-gray-900 text-sm rounded p-2.5 border border-gray-700 focus:outline-none focus:border-red-500">
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="submit" id="save-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition">Save Video</button>
+                    <button type="button" id="cancel-edit-btn" onclick="resetVideoForm()" class="hidden bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition">Cancel Edit</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 4. Videos List with Edit & Delete Options -->
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md">
+            <h2 class="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2"><i class="fa-solid fa-list-check text-red-500"></i> All Videos</h2>
+            <div id="video-list" class="space-y-3"></div>
         </div>
 
     </div>
 
+    <!-- JavaScript Logic -->
     <script>
-        // --- ⚙️ CONFIGURATION (আপনার Supabase Credentials) ---
         const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0"; // আপনার anon public key বসান
-
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0"; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Upload Video to Supabase
-        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+        let categoriesList = [];
+
+        // Fetch Settings
+        async function loadSettings() {
+            const { data } = await supabaseClient.from('settings').select('*').single();
+            if (data) {
+                document.getElementById('notice-input').value = data.notice || '';
+                document.getElementById('telegram-input').value = data.telegram_link || '';
+                document.getElementById('contact-input').value = data.contact_link || '';
+            }
+        }
+
+        // Save Settings
+        document.getElementById('settings-form').onsubmit = async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('submit-btn');
-            btn.innerText = "Publishing...";
-            btn.disabled = true;
+            const notice = document.getElementById('notice-input').value;
+            const telegram_link = document.getElementById('telegram-input').value;
+            const contact_link = document.getElementById('contact-input').value;
 
-            const title = document.getElementById('v-title').value;
-            const embed_code = document.getElementById('v-embed').value;
-            const thumbnail_url = document.getElementById('v-thumb').value;
-            const download_link = document.getElementById('v-download').value;
+            const { error } = await supabaseClient.from('settings').upsert({ id: 1, notice, telegram_link, contact_link });
+            if (error) alert("Error saving settings!");
+            else alert("Settings updated successfully!");
+        };
 
-            const { data, error } = await supabaseClient.from('videos').insert([
-                { title, embed_code, thumbnail_url, download_link }
-            ]);
+        // Fetch & Display Categories
+        async function loadCategories() {
+            const { data } = await supabaseClient.from('categories').select('*');
+            categoriesList = data || [];
+            
+            const catSelect = document.getElementById('video-category');
+            catSelect.innerHTML = '<option value="">None</option>';
+            
+            const catContainer = document.getElementById('category-list');
+            catContainer.innerHTML = '';
 
-            if (error) {
-                alert("Error: " + error.message);
-            } else {
-                alert("Video Published Successfully!");
-                document.getElementById('upload-form').reset();
-                loadAdminVideos();
-            }
+            categoriesList.forEach(cat => {
+                // Populate Dropdown
+                const opt = document.createElement('option');
+                opt.value = cat.name;
+                opt.innerText = cat.name;
+                catSelect.appendChild(opt);
 
-            btn.innerText = "Publish Video";
-            btn.disabled = false;
-        });
-
-        // Load Videos in Admin List
-        async function loadAdminVideos() {
-            const list = document.getElementById('admin-video-list');
-            list.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Loading videos...</p>';
-
-            const { data, error } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });
-            if (error) return alert("Error loading videos!");
-
-            list.innerHTML = '';
-            if (data.length === 0) {
-                list.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No videos found.</p>';
-                return;
-            }
-
-            data.forEach(video => {
-                const item = document.createElement('div');
-                item.className = "flex items-center justify-between bg-gray-800/60 p-3 rounded-xl border border-gray-700/50 hover:border-gray-600 transition";
-                item.innerHTML = `
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <img src="${video.thumbnail_url}" class="w-16 h-10 object-cover rounded-lg flex-shrink-0">
-                        <div class="truncate">
-                            <h4 class="text-sm font-semibold text-gray-200 truncate">${video.title}</h4>
-                            <p class="text-xs text-gray-500 truncate">${video.embed_code}</p>
-                        </div>
-                    </div>
-                    <button onclick="deleteVideo(${video.id})" class="text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 p-2.5 rounded-lg transition ml-2">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
+                // Populate Category Badges
+                const badge = document.createElement('div');
+                badge.className = "bg-gray-900 border border-gray-700 text-xs px-3 py-1.5 rounded-full flex items-center gap-2";
+                badge.innerHTML = `
+                    <span>${cat.name}</span>
+                    <button onclick="deleteCategory(${cat.id})" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-xmark"></i></button>
                 `;
-                list.appendChild(item);
+                catContainer.appendChild(badge);
             });
+        }
+
+        // Add Category
+        document.getElementById('category-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('cat-name-input').value;
+            await supabaseClient.from('categories').insert([{ name }]);
+            document.getElementById('cat-name-input').value = '';
+            loadCategories();
+        };
+
+        // Delete Category
+        async function deleteCategory(id) {
+            if (confirm("Delete this category?")) {
+                await supabaseClient.from('categories').delete().eq('id', id);
+                loadCategories();
+            }
+        }
+
+        // Add or Update Video
+        document.getElementById('video-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-video-id').value;
+            const title = document.getElementById('video-title').value;
+            const embed_code = document.getElementById('video-embed').value;
+            const thumbnail_url = document.getElementById('video-thumb').value;
+            const category = document.getElementById('video-category').value;
+            const download_link = document.getElementById('video-download').value;
+
+            const payload = { title, embed_code, thumbnail_url, category, download_link };
+
+            if (id) {
+                await supabaseClient.from('videos').update(payload).eq('id', id);
+                alert("Video Updated!");
+            } else {
+                await supabaseClient.from('videos').insert([payload]);
+                alert("Video Added!");
+            }
+
+            resetVideoForm();
+            loadVideos();
+        };
+
+        // Edit Video
+        function editVideo(video) {
+            document.getElementById('edit-video-id').value = video.id;
+            document.getElementById('video-title').value = video.title;
+            document.getElementById('video-embed').value = video.embed_code;
+            document.getElementById('video-thumb').value = video.thumbnail_url || '';
+            document.getElementById('video-category').value = video.category || '';
+            document.getElementById('video-download').value = video.download_link || '';
+
+            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square text-yellow-500"></i> Edit Video';
+            document.getElementById('save-btn').innerText = "Update Video";
+            document.getElementById('save-btn').className = "bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition";
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetVideoForm() {
+            document.getElementById('video-form').reset();
+            document.getElementById('edit-video-id').value = '';
+            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-video text-green-500"></i> Add New Video';
+            document.getElementById('save-btn').innerText = "Save Video";
+            document.getElementById('save-btn').className = "bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
         }
 
         // Delete Video
         async function deleteVideo(id) {
             if (confirm("Are you sure you want to delete this video?")) {
-                const { error } = await supabaseClient.from('videos').delete().eq('id', id);
-                if (error) alert("Error deleting: " + error.message);
-                else loadAdminVideos();
+                await supabaseClient.from('videos').delete().eq('id', id);
+                loadVideos();
             }
         }
 
-        loadAdminVideos();
+        // Fetch Videos List
+        async function loadVideos() {
+            const { data } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });
+            const list = document.getElementById('video-list');
+            list.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 text-sm">No videos found.</p>';
+                return;
+            }
+
+            data.forEach(v => {
+                const item = document.createElement('div');
+                item.className = "bg-gray-900 p-3 rounded-lg border border-gray-700 flex justify-between items-center gap-4";
+                item.innerHTML = `
+                    <div class="flex-1 truncate">
+                        <h4 class="font-semibold text-sm truncate text-gray-200">${v.title}</h4>
+                        <span class="text-xs text-gray-500">${v.category || 'No Category'}</span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick='editVideo(${JSON.stringify(v).replace(/'/g, "&apos;")})' class="bg-yellow-600 hover:bg-yellow-700 text-white text-xs px-3 py-1.5 rounded transition"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button onclick="deleteVideo(${v.id})" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded transition"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        loadSettings();
+        loadCategories();
+        loadVideos();
     </script>
 </body>
 </html>
