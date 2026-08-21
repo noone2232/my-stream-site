@@ -355,19 +355,20 @@
                 feed.appendChild(card);
 
                 // Interstitial Ad Placement every 4 items
-                // Interstitial Ad Placement every 4 items
-if ((index + 1) % 4 === 0) {
-    const adCard = document.createElement('div');
-    adCard.className = "col-span-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";
-    adCard.innerHTML = `
-        <span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>
-        <div class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
-            <script async="async" data-cfasync="false" src="https://consistinvention.com/a9220cfc13cfe7a075b9e2a47b86b603/invoke.js"><\/script>
-            <div id="container-a9220cfc13cfe7a075b9e2a47b86b603"></div>
-        </div>
-    `;
-    feed.appendChild(adCard);
-}
+                // Interstitial Ad Placement every 4 items with unique container ID
+                if ((index + 1) % 4 === 0) {
+                    const uniqueId = "container-a9220cfc-" + Math.random().toString(36).substring(2, 9);
+                    const adCard = document.createElement('div');
+                    adCard.className = "col-span-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";
+                    adCard.innerHTML = `
+                        <span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>
+                        <div class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
+                            <script async="async" data-cfasync="false" src="https://consistinvention.com/a9220cfc13cfe7a075b9e2a47b86b603/invoke.js"><\/script>
+                            <div id="${uniqueId}"></div>
+                        </div>
+                    `;
+                    feed.appendChild(adCard);
+                }
             });
         }
 
