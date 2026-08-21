@@ -16,7 +16,6 @@
         .video-card:hover { transform: translateY(-4px); transition: all 0.2s ease-in-out; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
         .animate-marquee { display: inline-block; white-space: nowrap; animation: marquee 15s linear infinite; }
-        /* Player Responsive Video Containment Fix */
         .responsive-video-player {
             max-height: 75vh;
             width: 100%;
@@ -26,7 +25,6 @@
     </style>
 	<!-- Adsterra Popunder Ad -->
 	<script src="https://consistinvention.com/98/20/57/982057eb8ca379abcfe8a30e6497186b.js"></script>
-
 </head>
 <body class="bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white font-sans min-h-screen transition-colors duration-200">
 
@@ -70,8 +68,7 @@
     <!-- Categories Filter Bar -->
     <nav class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-2">
         <div id="category-bar" class="flex gap-2 overflow-x-auto pb-1 max-w-7xl mx-auto scrollbar-none">
-            <button onclick="filterCategory('All')" class="category-btn bg-red-600 text-white text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 shadow-sm transition">All</button>
-            <!-- Categories will be loaded dynamically -->
+            <button onclick="filterCategory('All')" class="category-btn bg-red-600 text-white text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shadow-sm transition">All</button>
         </div>
     </nav>
 
@@ -86,7 +83,7 @@
             <p>Loading videos...</p>
         </div>
 
-        <!-- Styled Load More Button (Positioned above bottom ad) -->
+        <!-- Load More Button -->
         <div id="load-more-container" class="text-center my-8 hidden">
             <button onclick="loadMoreVideos()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3.5 px-10 rounded-full shadow-lg text-sm md:text-base transition transform hover:scale-105 flex items-center justify-center gap-2 mx-auto border border-red-500/30">
                 <i class="fa-solid fa-circle-chevron-down text-lg animate-bounce"></i>
@@ -94,14 +91,11 @@
             </button>
         </div>
 
-        <!-- Bottom Ad Container below Load More Button -->
+        <!-- Bottom Ad Container -->
         <div id="feed-bottom-ad" class="mt-6 hidden">
             <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px]">
                 <span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>
-                <div class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
-                    <script async="async" data-cfasync="false" src="https://consistinvention.com/a9220cfc13cfe7a075b9e2a47b86b603/invoke.js"></script>
-<div id="container-a9220cfc13cfe7a075b9e2a47b86b603"></div>
-
+                <div id="bottom-ad-wrapper" class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
                 </div>
             </div>
         </div>
@@ -111,7 +105,6 @@
     <div id="player-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex justify-center items-center p-2 md:p-4 overflow-y-auto">
         <div class="bg-white dark:bg-gray-900 w-full max-w-4xl rounded-2xl overflow-hidden border border-gray-300 dark:border-gray-800 shadow-2xl relative flex flex-col my-auto max-h-[95vh]">
             
-            <!-- Modal Header -->
             <div class="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-800">
                 <h3 id="modal-video-title" class="text-sm md:text-base font-semibold truncate pr-4 text-gray-800 dark:text-gray-200">Video Player</h3>
                 <button onclick="closePlayer()" class="text-gray-400 hover:text-white bg-gray-200 dark:bg-gray-800 hover:bg-red-600 w-8 h-8 rounded-full flex items-center justify-center transition">
@@ -119,25 +112,20 @@
                 </button>
             </div>
 
-            <!-- Modal Content Wrapper -->
             <div class="overflow-y-auto max-h-[85vh]">
-                
-                <!-- TOP BANNER AD PLACE -->
-<!-- TOP BANNER AD PLACE -->
-<div class="p-1 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-b border-gray-200 dark:border-gray-800 min-h-[50px]">
-    <script type="text/javascript">
-	atOptions = {
-		'key' : 'a76bfb2ebe9ea649772314d033893a97',
-		'format' : 'iframe',
-		'height' : 50,
-		'width' : 320,
-		'params' : {}
-	};
-    </script>
-    <script type="text/javascript" src="https://consistinvention.com/a76bfb2ebe9ea649772314d033893a97/invoke.js"></script>
-</div>
+                <div class="p-1 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-b border-gray-200 dark:border-gray-800 min-h-[50px]">
+                    <script type="text/javascript">
+                    atOptions = {
+                        'key' : 'a76bfb2ebe9ea649772314d033893a97',
+                        'format' : 'iframe',
+                        'height' : 50,
+                        'width' : 320,
+                        'params' : {}
+                    };
+                    </script>
+                    <script type="text/javascript" src="https://consistinvention.com/a76bfb2ebe9ea649772314d033893a97/invoke.js"></script>
+                </div>
 
-                <!-- Flexible Video Container (Fixes 9:16 Short Video & 16:9 Long Video) -->
                 <div class="relative w-full bg-black flex justify-center items-center min-h-[250px] max-h-[75vh] overflow-hidden">
                     <div id="unlock-overlay" class="absolute inset-0 bg-black/95 z-20 flex flex-col items-center justify-center text-center p-4">
                         <i class="fa-solid fa-lock text-red-500 text-4xl md:text-5xl mb-3 animate-bounce"></i>
@@ -148,12 +136,10 @@
                         </button>
                     </div>
 
-                    <!-- Embed Iframe and HTML5 Video Element -->
                     <iframe id="modal-iframe" class="w-full h-full aspect-video hidden" src="" frameborder="0" allowfullscreen></iframe>
                     <video id="modal-html5-video" class="responsive-video-player hidden" controls></video>
                 </div>
 
-                <!-- Download Button Footer -->
                 <div id="download-container" class="p-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center hidden">
                     <span class="text-xs text-gray-500 dark:text-gray-400">Download Link Available</span>
                     <a id="modal-download-btn" href="#" target="_blank" class="bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition">
@@ -161,7 +147,6 @@
                     </a>
                 </div>
 
-                <!-- RELATED VIDEOS SECTION -->
                 <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
                     <h4 class="text-sm font-bold mb-3 text-red-500 flex items-center gap-2">
                         <i class="fa-solid fa-fire"></i> You May Also Like
@@ -169,28 +154,24 @@
                     <div id="related-videos-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
                 </div>
 
-                <!-- BOTTOM BANNER AD PLACE -->
-                <!-- BOTTOM BANNER AD PLACE -->
-<div class="p-2 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-t border-gray-200 dark:border-gray-800 min-h-[250px]">
-    <script type="text/javascript">
-	atOptions = {
-		'key' : '4b2f52d103aa61b5b3e917fe76104b99',
-		'format' : 'iframe',
-		'height' : 250,
-		'width' : 300,
-		'params' : {}
-	};
-    </script>
-    <script type="text/javascript" src="https://consistinvention.com/4b2f52d103aa61b5b3e917fe76104b99/invoke.js"></script>
-</div>
-
+                <div class="p-2 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-t border-gray-200 dark:border-gray-800 min-h-[250px]">
+                    <script type="text/javascript">
+                    atOptions = {
+                        'key' : '4b2f52d103aa61b5b3e917fe76104b99',
+                        'format' : 'iframe',
+                        'height' : 250,
+                        'width' : 300,
+                        'params' : {}
+                    };
+                    </script>
+                    <script type="text/javascript" src="https://consistinvention.com/4b2f52d103aa61b5b3e917fe76104b99/invoke.js"></script>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- JavaScript Logic -->
     <script>
-        // --- CONFIGURATION ---
         const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0"; 
         const ADSTERRA_DIRECT_LINK = "https://consistinvention.com/tvprnh1m8?key=04e934389df942532a60c6b975af665a"; 
@@ -200,14 +181,13 @@
         let allVideosData = [];
         let filteredVideosData = [];
         let currentPage = 1;
-        const pageSize = 16; // Updated to 16 videos per batch
+        const pageSize = 16;
         let unlockClickCount = 0;
         let isTimerRunning = false;
         let selectedCategory = "All";
         let currentVideoEmbedCode = "";
         let isPlayerOpen = false;
 
-        // Auto Generate Thumbnail
         function getAutoThumbnail(embedUrl) {
             if (!embedUrl) return 'https://via.placeholder.com/640x360?text=No+Thumbnail';
             if (embedUrl.includes('streamtape')) {
@@ -220,7 +200,6 @@
             return 'https://via.placeholder.com/640x360/0f172a/ffffff?text=Play+Video';
         }
 
-        // Theme Toggle
         function toggleTheme() {
             const html = document.documentElement;
             const icon = document.getElementById('theme-icon');
@@ -236,41 +215,42 @@
         }
         if (localStorage.getItem('theme') === 'light') toggleTheme();
 
-        // Load Settings
         async function fetchSettings() {
-            const { data } = await supabaseClient.from('settings').select('*').single();
-            if (data) {
-                if (data.notice && data.notice.trim() !== "") {
-                    document.getElementById('notice-text').innerText = data.notice;
-                    document.getElementById('notice-container').classList.remove('hidden');
+            try {
+                const { data } = await supabaseClient.from('settings').select('*').single();
+                if (data) {
+                    if (data.notice && data.notice.trim() !== "") {
+                        document.getElementById('notice-text').innerText = data.notice;
+                        document.getElementById('notice-container').classList.remove('hidden');
+                    }
+                    if (data.telegram_link && data.telegram_link.trim() !== "") {
+                        document.getElementById('telegram-link-btn').href = data.telegram_link;
+                        document.getElementById('telegram-banner-container').classList.remove('hidden');
+                    }
+                    if (data.contact_link && data.contact_link.trim() !== "") {
+                        document.getElementById('contact-btn').href = data.contact_link;
+                        document.getElementById('contact-btn').classList.remove('hidden');
+                    }
                 }
-                if (data.telegram_link && data.telegram_link.trim() !== "") {
-                    document.getElementById('telegram-link-btn').href = data.telegram_link;
-                    document.getElementById('telegram-banner-container').classList.remove('hidden');
-                }
-                if (data.contact_link && data.contact_link.trim() !== "") {
-                    document.getElementById('contact-btn').href = data.contact_link;
-                    document.getElementById('contact-btn').classList.remove('hidden');
-                }
-            }
+            } catch(e) {}
         }
 
-        // Load Categories
         async function fetchCategories() {
-            const { data } = await supabaseClient.from('categories').select('*');
-            const bar = document.getElementById('category-bar');
-            if (data) {
-                data.forEach(cat => {
-                    const btn = document.createElement('button');
-                    btn.className = "category-btn bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";
-                    btn.innerText = cat.name;
-                    btn.onclick = () => filterCategory(cat.name);
-                    bar.appendChild(btn);
-                });
-            }
+            try {
+                const { data } = await supabaseClient.from('categories').select('*');
+                const bar = document.getElementById('category-bar');
+                if (data) {
+                    data.forEach(cat => {
+                        const btn = document.createElement('button');
+                        btn.className = "category-btn bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";
+                        btn.innerText = cat.name;
+                        btn.onclick = () => filterCategory(cat.name);
+                        bar.appendChild(btn);
+                    });
+                }
+            } catch(e) {}
         }
 
-        // Filter Category
         function filterCategory(catName) {
             selectedCategory = catName;
             document.querySelectorAll('.category-btn').forEach(btn => {
@@ -286,24 +266,26 @@
             toggleLoadMoreButton();
         }
 
-        // Fetch Videos
         async function fetchVideos() {
             const spinner = document.getElementById('loading-spinner');
-            const { data, error } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });
+            try {
+                const { data, error } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });
 
-            if (error) {
-                spinner.innerHTML = '<p class="text-red-500">Failed to load videos.</p>';
-                return;
+                if (error || !data) {
+                    spinner.innerHTML = '<p class="text-red-500">Failed to load videos.</p>';
+                    return;
+                }
+
+                allVideosData = data;
+                filteredVideosData = data;
+                spinner.style.display = 'none';
+                renderVideoGrid(filteredVideosData.slice(0, pageSize), true);
+                toggleLoadMoreButton();
+            } catch(err) {
+                spinner.innerHTML = '<p class="text-red-500">Error loading videos.</p>';
             }
-
-            allVideosData = data;
-            filteredVideosData = data;
-            spinner.style.display = 'none';
-            renderVideoGrid(filteredVideosData.slice(0, pageSize), true);
-            toggleLoadMoreButton();
         }
 
-        // Load More Pagination
         function loadMoreVideos() {
             currentPage++;
             const start = (currentPage - 1) * pageSize;
@@ -321,9 +303,33 @@
                 btnContainer.classList.add('hidden');
             }
             bottomAd.classList.remove('hidden');
+            
+            // Safe inject bottom ad
+            const bottomWrapper = document.getElementById('bottom-ad-wrapper');
+            if (bottomWrapper && bottomWrapper.children.length === 0) {
+                loadAdIntoContainer(bottomWrapper);
+            }
         }
 
-        // Render Video Grid
+        function loadAdIntoContainer(targetElement) {
+            const iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '100px';
+            iframe.style.border = 'none';
+            iframe.style.overflow = 'hidden';
+            targetElement.appendChild(iframe);
+
+            const iframeDoc = iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(`
+                <body style="margin:0;padding:0;display:flex;justify-content:center;align-items:center;background:transparent;">
+                    <script async="async" data-cfasync="false" src="https://consistinvention.com/a9220cfc13cfe7a075b9e2a47b86b603/invoke.js"><\/script>
+                    <div id="container-a9220cfc13cfe7a075b9e2a47b86b603"></div>
+                </body>
+            `);
+            iframeDoc.close();
+        }
+
         function renderVideoGrid(videos, clearPrevious = false) {
             const feed = document.getElementById('video-feed');
             if (clearPrevious) feed.innerHTML = '';
@@ -354,25 +360,26 @@
                 `;
                 feed.appendChild(card);
 
-                // Interstitial Ad Placement every 4 items
-                // Interstitial Ad Placement every 4 items with unique container ID
+                // Interstitial Safe Ad Placement every 4 items
                 if ((index + 1) % 4 === 0) {
-                    const uniqueId = "container-a9220cfc-" + Math.random().toString(36).substring(2, 9);
                     const adCard = document.createElement('div');
                     adCard.className = "col-span-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";
-                    adCard.innerHTML = `
-                        <span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>
-                        <div class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
-                            <script async="async" data-cfasync="false" src="https://consistinvention.com/a9220cfc13cfe7a075b9e2a47b86b603/invoke.js"><\/script>
-                            <div id="${uniqueId}"></div>
-                        </div>
-                    `;
+                    
+                    const adContainer = document.createElement('div');
+                    adContainer.className = "w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center";
+
+                    adCard.innerHTML = `<span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>`;
+                    adCard.appendChild(adContainer);
                     feed.appendChild(adCard);
+
+                    // Load ad safely without blocking main thread
+                    setTimeout(() => {
+                        loadAdIntoContainer(adContainer);
+                    }, 200);
                 }
             });
         }
 
-        // Open Modal Player
         function openPlayer(video) {
             currentVideoEmbedCode = video.embed_code;
             document.getElementById('modal-iframe').src = "";
@@ -395,7 +402,6 @@
             document.getElementById('unlock-btn').className = "bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition cursor-pointer";
 
             renderRelatedVideos(video.id);
-
             document.getElementById('player-modal').classList.remove('hidden');
 
             if (!isPlayerOpen) {
@@ -404,7 +410,6 @@
             }
         }
 
-        // Close Player
         function closePlayer(fromHistory = false) {
             document.getElementById('player-modal').classList.add('hidden');
             const iframe = document.getElementById('modal-iframe');
@@ -429,7 +434,6 @@
             }
         });
 
-        // Render Related Videos
         function renderRelatedVideos(currentVidId) {
             const container = document.getElementById('related-videos-grid');
             container.innerHTML = '';
@@ -455,7 +459,6 @@
             });
         }
 
-        // 5-Second Countdown Timer Ad Unlock Controller
         function handleUnlock() {
             if (isTimerRunning) return;
 
@@ -488,7 +491,6 @@
                         const iframe = document.getElementById('modal-iframe');
                         const html5Video = document.getElementById('modal-html5-video');
 
-                        // Support MP4 (Catbox / Any CDN direct stream) vs Embed Iframe
                         if (currentVideoEmbedCode.includes('.mp4') || currentVideoEmbedCode.includes('catbox.moe')) {
                             iframe.classList.add('hidden');
                             html5Video.classList.remove('hidden');
@@ -515,10 +517,10 @@
         fetchSettings();
         fetchCategories();
         fetchVideos();
-</script>
+    </script>
 
-<!-- Adsterra Social Bar Ad -->
-<script type="text/javascript" src="https://consistinvention.com/a2/53/38/a25338ef837f777ab534fa5598161fa1.js"></script>
+    <!-- Adsterra Social Bar Ad -->
+    <script type="text/javascript" src="https://consistinvention.com/a2/53/38/a25338ef837f777ab534fa5598161fa1.js"></script>
 
 </body>
 </html>
