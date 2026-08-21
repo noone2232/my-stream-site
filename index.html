@@ -16,11 +16,18 @@
         .video-card:hover { transform: translateY(-4px); transition: all 0.2s ease-in-out; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
         .animate-marquee { display: inline-block; white-space: nowrap; animation: marquee 15s linear infinite; }
+        /* Player Responsive Video Containment Fix */
+        .responsive-video-player {
+            max-height: 75vh;
+            width: 100%;
+            object-fit: contain;
+            background-color: #000;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white font-sans min-h-screen transition-colors duration-200">
 
-    <!-- Top Banner Promo (Telegram Banner Strategy) -->
+    <!-- Top Banner Promo -->
     <div id="telegram-banner-container" class="hidden bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-xs md:text-sm py-2 px-4 text-center font-medium flex justify-between items-center shadow-md">
         <span class="truncate pr-2"><i class="fa-brands fa-telegram text-lg mr-1 animate-pulse"></i> সব নতুন ও প্রাইভেট ভিডিও পেতে আমাদের টেলিগ্রাম চ্যানেলে জয়েন করুন!</span>
         <a id="telegram-link-btn" href="#" target="_blank" class="bg-white text-blue-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-gray-100 transition shrink-0">Join Telegram</a>
@@ -75,6 +82,24 @@
             <i class="fa-solid fa-spinner fa-spin text-3xl mb-2 text-red-500"></i>
             <p>Loading videos...</p>
         </div>
+
+        <!-- Styled Load More Button (Positioned above bottom ad) -->
+        <div id="load-more-container" class="text-center my-8 hidden">
+            <button onclick="loadMoreVideos()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3.5 px-10 rounded-full shadow-lg text-sm md:text-base transition transform hover:scale-105 flex items-center justify-center gap-2 mx-auto border border-red-500/30">
+                <i class="fa-solid fa-circle-chevron-down text-lg animate-bounce"></i>
+                <span>Load More Videos / আরও ভিডিও দেখুন</span>
+            </button>
+        </div>
+
+        <!-- Bottom Ad Container below Load More Button -->
+        <div id="feed-bottom-ad" class="mt-6 hidden">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px]">
+                <span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>
+                <div class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
+                    [ Adsterra Native Banner Block ]
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Video Modal Player -->
@@ -89,27 +114,28 @@
                 </button>
             </div>
 
-            <!-- Modal Content Wrapper (Scrollable if ad is big) -->
-            <div class="overflow-y-auto">
+            <!-- Modal Content Wrapper -->
+            <div class="overflow-y-auto max-h-[85vh]">
                 
-                <!-- 🎯 TOP BANNER AD PLACE (Player-এর উপরে) -->
-                <!-- পছন্দমতো যেকোনো সাইজের Banner Ad Script এখানে বসান (e.g. 728x90, 468x60, 320x50) -->
+                <!-- TOP BANNER AD PLACE -->
                 <div class="p-1 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-b border-gray-200 dark:border-gray-800 min-h-[50px]">
                     <span class="text-[10px] text-gray-400 uppercase tracking-widest">[ Top Player Banner Ad Place ]</span>
                 </div>
 
-                <!-- Player Box with 2-Click Unlock System -->
-                <div class="relative w-full aspect-video bg-black">
+                <!-- Flexible Video Container (Fixes 9:16 Short Video & 16:9 Long Video) -->
+                <div class="relative w-full bg-black flex justify-center items-center min-h-[250px] max-h-[75vh] overflow-hidden">
                     <div id="unlock-overlay" class="absolute inset-0 bg-black/95 z-20 flex flex-col items-center justify-center text-center p-4">
                         <i class="fa-solid fa-lock text-red-500 text-4xl md:text-5xl mb-3 animate-bounce"></i>
                         <h2 class="text-lg md:text-xl font-bold mb-1 text-white">ভিডিওটি প্লে করতে আনলক করুন</h2>
-                        <p class="text-gray-400 text-xs md:text-sm mb-5">নিচের বাটনে ২টি ক্লিক সম্পন্ন করে ভিডিও চালু করুন</p>
+                        <p class="text-gray-400 text-xs md:text-sm mb-5">বিজ্ঞাপনে ক্লিক করে ৫ সেকেন্ড অপেক্ষা করে ভিডিওটি চালু করুন</p>
                         <button id="unlock-btn" onclick="handleUnlock()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition">
                             <span id="btn-text">Unlock Video (Step 1/2)</span>
                         </button>
                     </div>
 
-                    <iframe id="modal-iframe" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+                    <!-- Embed Iframe and HTML5 Video Element -->
+                    <iframe id="modal-iframe" class="w-full h-full aspect-video hidden" src="" frameborder="0" allowfullscreen></iframe>
+                    <video id="modal-html5-video" class="responsive-video-player hidden" controls></video>
                 </div>
 
                 <!-- Download Button Footer -->
@@ -120,8 +146,15 @@
                     </a>
                 </div>
 
-                <!-- 🎯 BOTTOM BANNER AD PLACE (Player-এর নিচে) -->
-                <!-- পছন্দমতো যেকোনো সাইজের Banner Ad Script এখানে বসান (e.g. 728x90, 300x250) -->
+                <!-- RELATED VIDEOS SECTION -->
+                <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+                    <h4 class="text-sm font-bold mb-3 text-red-500 flex items-center gap-2">
+                        <i class="fa-solid fa-fire"></i> You May Also Like
+                    </h4>
+                    <div id="related-videos-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                </div>
+
+                <!-- BOTTOM BANNER AD PLACE -->
                 <div class="p-2 text-center bg-gray-100 dark:bg-gray-950 flex justify-center items-center border-t border-gray-200 dark:border-gray-800 min-h-[60px]">
                     <span class="text-[10px] text-gray-400 uppercase tracking-widest">[ Bottom Player Banner Ad Place ]</span>
                 </div>
@@ -132,7 +165,7 @@
 
     <!-- JavaScript Logic -->
     <script>
-        // --- ⚙️ CONFIGURATION ---
+        // --- CONFIGURATION ---
         const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0"; 
         const ADSTERRA_DIRECT_LINK = "https://consistinvention.com/tvprnh1m8?key=04e934389df942532a60c6b975af665a"; 
@@ -140,11 +173,16 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let allVideosData = [];
+        let filteredVideosData = [];
+        let currentPage = 1;
+        const pageSize = 16; // Updated to 16 videos per batch
         let unlockClickCount = 0;
+        let isTimerRunning = false;
         let selectedCategory = "All";
         let currentVideoEmbedCode = "";
+        let isPlayerOpen = false;
 
-        // Auto Generate Thumbnail from Video Embed URL if Image Link is missing
+        // Auto Generate Thumbnail
         function getAutoThumbnail(embedUrl) {
             if (!embedUrl) return 'https://via.placeholder.com/640x360?text=No+Thumbnail';
             if (embedUrl.includes('streamtape')) {
@@ -157,7 +195,7 @@
             return 'https://via.placeholder.com/640x360/0f172a/ffffff?text=Play+Video';
         }
 
-        // Dark / Light Theme Controller
+        // Theme Toggle
         function toggleTheme() {
             const html = document.documentElement;
             const icon = document.getElementById('theme-icon');
@@ -173,7 +211,7 @@
         }
         if (localStorage.getItem('theme') === 'light') toggleTheme();
 
-        // Load Settings (Notice, Telegram, Contact)
+        // Load Settings
         async function fetchSettings() {
             const { data } = await supabaseClient.from('settings').select('*').single();
             if (data) {
@@ -207,7 +245,7 @@
             }
         }
 
-        // Filter Videos by Category
+        // Filter Category
         function filterCategory(catName) {
             selectedCategory = catName;
             document.querySelectorAll('.category-btn').forEach(btn => {
@@ -217,8 +255,10 @@
                     btn.className = "category-btn bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full shrink-0 transition";
                 }
             });
-            const filtered = selectedCategory === "All" ? allVideosData : allVideosData.filter(v => v.category === selectedCategory);
-            renderVideoGrid(filtered);
+            filteredVideosData = selectedCategory === "All" ? allVideosData : allVideosData.filter(v => v.category === selectedCategory);
+            currentPage = 1;
+            renderVideoGrid(filteredVideosData.slice(0, pageSize), true);
+            toggleLoadMoreButton();
         }
 
         // Fetch Videos
@@ -232,16 +272,38 @@
             }
 
             allVideosData = data;
+            filteredVideosData = data;
             spinner.style.display = 'none';
-            renderVideoGrid(allVideosData);
+            renderVideoGrid(filteredVideosData.slice(0, pageSize), true);
+            toggleLoadMoreButton();
         }
 
-        // Render Video Grid + Ad Banners
-        function renderVideoGrid(videos) {
-            const feed = document.getElementById('video-feed');
-            feed.innerHTML = '';
+        // Load More Pagination
+        function loadMoreVideos() {
+            currentPage++;
+            const start = (currentPage - 1) * pageSize;
+            const nextBatch = filteredVideosData.slice(start, start + pageSize);
+            renderVideoGrid(nextBatch, false);
+            toggleLoadMoreButton();
+        }
 
-            if (videos.length === 0) {
+        function toggleLoadMoreButton() {
+            const btnContainer = document.getElementById('load-more-container');
+            const bottomAd = document.getElementById('feed-bottom-ad');
+            if (currentPage * pageSize < filteredVideosData.length) {
+                btnContainer.classList.remove('hidden');
+            } else {
+                btnContainer.classList.add('hidden');
+            }
+            bottomAd.classList.remove('hidden');
+        }
+
+        // Render Video Grid
+        function renderVideoGrid(videos, clearPrevious = false) {
+            const feed = document.getElementById('video-feed');
+            if (clearPrevious) feed.innerHTML = '';
+
+            if (filteredVideosData.length === 0) {
                 feed.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">No videos found.</p>';
                 return;
             }
@@ -267,13 +329,12 @@
                 `;
                 feed.appendChild(card);
 
-                // Insert Interstitial Banner Ad Block after every 4 videos
+                // Interstitial Ad Placement every 4 items
                 if ((index + 1) % 4 === 0) {
                     const adCard = document.createElement('div');
                     adCard.className = "col-span-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";
                     adCard.innerHTML = `
                         <span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>
-                        <!-- 🎯 BANNER AD CODE PLACE (Native Banner / 300x250 / 728x90) -->
                         <div class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
                             [ Adsterra Native Banner Block ]
                         </div>
@@ -287,6 +348,7 @@
         function openPlayer(video) {
             currentVideoEmbedCode = video.embed_code;
             document.getElementById('modal-iframe').src = "";
+            document.getElementById('modal-html5-video').src = "";
             document.getElementById('modal-video-title').innerText = video.title;
             
             const dlContainer = document.getElementById('download-container');
@@ -298,36 +360,128 @@
             }
 
             unlockClickCount = 0;
+            isTimerRunning = false;
             document.getElementById('unlock-overlay').style.display = 'flex';
             document.getElementById('btn-text').innerText = "Unlock Video (Step 1/2)";
-            document.getElementById('unlock-btn').className = "bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition";
+            document.getElementById('unlock-btn').disabled = false;
+            document.getElementById('unlock-btn').className = "bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition cursor-pointer";
+
+            renderRelatedVideos(video.id);
 
             document.getElementById('player-modal').classList.remove('hidden');
-        }
 
-        function closePlayer() {
-            document.getElementById('player-modal').classList.add('hidden');
-            document.getElementById('modal-iframe').src = "";
-            currentVideoEmbedCode = "";
-        }
-
-        function handleUnlock() {
-            unlockClickCount++;
-            if (unlockClickCount === 1) {
-                window.open(ADSTERRA_DIRECT_LINK, '_blank');
-                document.getElementById('btn-text').innerText = "Click Again to Play (Step 2/2)";
-                document.getElementById('unlock-btn').className = "bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition";
-            } else if (unlockClickCount >= 2) {
-                window.open(ADSTERRA_DIRECT_LINK, '_blank');
-                document.getElementById('unlock-overlay').style.display = 'none';
-                document.getElementById('modal-iframe').src = currentVideoEmbedCode;
+            if (!isPlayerOpen) {
+                isPlayerOpen = true;
+                window.history.pushState({ playerOpen: true }, "");
             }
+        }
+
+        // Close Player
+        function closePlayer(fromHistory = false) {
+            document.getElementById('player-modal').classList.add('hidden');
+            const iframe = document.getElementById('modal-iframe');
+            const videoEl = document.getElementById('modal-html5-video');
+            
+            iframe.src = "";
+            videoEl.pause();
+            videoEl.src = "";
+            currentVideoEmbedCode = "";
+
+            if (isPlayerOpen && !fromHistory) {
+                isPlayerOpen = false;
+                window.history.back();
+            } else {
+                isPlayerOpen = false;
+            }
+        }
+
+        window.addEventListener('popstate', function(event) {
+            if (isPlayerOpen) {
+                closePlayer(true);
+            }
+        });
+
+        // Render Related Videos
+        function renderRelatedVideos(currentVidId) {
+            const container = document.getElementById('related-videos-grid');
+            container.innerHTML = '';
+            
+            const otherVideos = allVideosData.filter(v => v.id !== currentVidId);
+            const shuffled = [...otherVideos].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 4);
+
+            selected.forEach(v => {
+                const thumb = v.thumbnail_url && v.thumbnail_url.trim() !== "" ? v.thumbnail_url : getAutoThumbnail(v.embed_code);
+                const item = document.createElement('div');
+                item.className = "cursor-pointer rounded-lg overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:opacity-90 transition";
+                item.onclick = () => openPlayer(v);
+                item.innerHTML = `
+                    <div class="relative aspect-video bg-gray-900">
+                        <img src="${thumb}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-1.5">
+                        <p class="text-[11px] font-medium line-clamp-1 text-gray-800 dark:text-gray-200">${v.title}</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // 5-Second Countdown Timer Ad Unlock Controller
+        function handleUnlock() {
+            if (isTimerRunning) return;
+
+            window.open(ADSTERRA_DIRECT_LINK, '_blank');
+            isTimerRunning = true;
+
+            let secondsLeft = 5;
+            const btn = document.getElementById('unlock-btn');
+            const btnText = document.getElementById('btn-text');
+
+            btn.disabled = true;
+            btn.className = "bg-gray-600 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base cursor-not-allowed opacity-80";
+
+            const timer = setInterval(() => {
+                btnText.innerText = `Please wait ${secondsLeft}s for Ad verification...`;
+                secondsLeft--;
+
+                if (secondsLeft < 0) {
+                    clearInterval(timer);
+                    isTimerRunning = false;
+                    unlockClickCount++;
+
+                    if (unlockClickCount === 1) {
+                        btn.disabled = false;
+                        btnText.innerText = "Click Again to Play (Step 2/2)";
+                        btn.className = "bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition cursor-pointer";
+                    } else if (unlockClickCount >= 2) {
+                        document.getElementById('unlock-overlay').style.display = 'none';
+
+                        const iframe = document.getElementById('modal-iframe');
+                        const html5Video = document.getElementById('modal-html5-video');
+
+                        // Support MP4 (Catbox / Any CDN direct stream) vs Embed Iframe
+                        if (currentVideoEmbedCode.includes('.mp4') || currentVideoEmbedCode.includes('catbox.moe')) {
+                            iframe.classList.add('hidden');
+                            html5Video.classList.remove('hidden');
+                            html5Video.src = currentVideoEmbedCode;
+                            html5Video.play();
+                        } else {
+                            html5Video.classList.add('hidden');
+                            iframe.classList.remove('hidden');
+                            iframe.src = currentVideoEmbedCode;
+                        }
+                    }
+                }
+            }, 1000);
         }
 
         function searchVideos() {
             const query = document.getElementById('search-input').value.toLowerCase();
-            const filtered = allVideosData.filter(v => v.title.toLowerCase().includes(query));
-            renderVideoGrid(filtered);
+            filteredVideosData = allVideosData.filter(v => v.title.toLowerCase().includes(query));
+            currentPage = 1;
+            renderVideoGrid(filteredVideosData.slice(0, pageSize), true);
+            toggleLoadMoreButton();
         }
 
         fetchSettings();
