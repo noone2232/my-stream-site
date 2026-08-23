@@ -83,16 +83,11 @@
             <p>Loading videos...</p>
         </div>
 
-        <!-- Load More Button -->
-        <div id="load-more-container" class="text-center my-8 hidden">
-            <button onclick="loadMoreVideos()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3.5 px-10 rounded-full shadow-lg text-sm md:text-base transition transform hover:scale-105 flex items-center justify-center gap-2 mx-auto border border-red-500/30">
-                <i class="fa-solid fa-circle-chevron-down text-lg animate-bounce"></i>
-                <span>Load More Videos / আরও ভিডিও দেখুন</span>
-            </button>
-        </div>
+        <!-- Numeric Pagination Container -->
+        <div id="pagination-container" class="flex justify-center items-center gap-2 my-8 flex-wrap"></div>
 
-        <!-- Bottom Ad Container -->
-        <div id="feed-bottom-ad" class="mt-6 hidden">
+        <!-- Permanent Bottom Ad Container -->
+        <div id="feed-bottom-ad" class="mt-6">
             <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px]">
                 <span class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Sponsored Advertisement</span>
                 <div id="bottom-ad-wrapper" class="w-full text-xs text-gray-400 py-4 bg-gray-50 dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 flex justify-center items-center">
@@ -181,7 +176,7 @@
         let allVideosData = [];
         let filteredVideosData = [];
         let currentPage = 1;
-        const pageSize = 16;
+        const pageSize = 15; // 15 videos per page
         let unlockClickCount = 0;
         let isTimerRunning = false;
         let selectedCategory = "All";
@@ -261,9 +256,7 @@
                 }
             });
             filteredVideosData = selectedCategory === "All" ? allVideosData : allVideosData.filter(v => v.category === selectedCategory);
-            currentPage = 1;
-            renderVideoGrid(filteredVideosData.slice(0, pageSize), true);
-            toggleLoadMoreButton();
+            goToPage(1);
         }
 
         async function fetchVideos() {
@@ -279,35 +272,66 @@
                 allVideosData = data;
                 filteredVideosData = data;
                 spinner.style.display = 'none';
-                renderVideoGrid(filteredVideosData.slice(0, pageSize), true);
-                toggleLoadMoreButton();
+                goToPage(1);
+                
+                // Initialize Permanent Bottom Ad
+                const bottomWrapper = document.getElementById('bottom-ad-wrapper');
+                if (bottomWrapper) {
+                    loadAdIntoContainer(bottomWrapper);
+                }
             } catch(err) {
                 spinner.innerHTML = '<p class="text-red-500">Error loading videos.</p>';
             }
         }
 
-        function loadMoreVideos() {
-            currentPage++;
+        function goToPage(page) {
+            currentPage = page;
             const start = (currentPage - 1) * pageSize;
-            const nextBatch = filteredVideosData.slice(start, start + pageSize);
-            renderVideoGrid(nextBatch, false);
-            toggleLoadMoreButton();
+            const currentBatch = filteredVideosData.slice(start, start + pageSize);
+            
+            renderVideoGrid(currentBatch);
+            renderPaginationControls();
+            
+            // Scroll back to top smoothly
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function toggleLoadMoreButton() {
-            const btnContainer = document.getElementById('load-more-container');
-            const bottomAd = document.getElementById('feed-bottom-ad');
-            if (currentPage * pageSize < filteredVideosData.length) {
-                btnContainer.classList.remove('hidden');
-            } else {
-                btnContainer.classList.add('hidden');
+        function renderPaginationControls() {
+            const container = document.getElementById('pagination-container');
+            container.innerHTML = '';
+
+            const totalPages = Math.ceil(filteredVideosData.length / pageSize);
+            if (totalPages <= 1) return;
+
+            // Previous Button
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.className = "px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-xs md:text-sm font-bold transition";
+                prevBtn.innerText = "Prev";
+                prevBtn.onclick = () => goToPage(currentPage - 1);
+                container.appendChild(prevBtn);
             }
-            bottomAd.classList.remove('hidden');
-            
-            // Safe inject bottom ad
-            const bottomWrapper = document.getElementById('bottom-ad-wrapper');
-            if (bottomWrapper && bottomWrapper.children.length === 0) {
-                loadAdIntoContainer(bottomWrapper);
+
+            // Page Numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                if (i === currentPage) {
+                    pageBtn.className = "px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-xs md:text-sm font-bold shadow-md";
+                } else {
+                    pageBtn.className = "px-3.5 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-xs md:text-sm font-bold transition";
+                }
+                pageBtn.innerText = i;
+                pageBtn.onclick = () => goToPage(i);
+                container.appendChild(pageBtn);
+            }
+
+            // Next Button
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.className = "px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-xs md:text-sm font-bold transition";
+                nextBtn.innerText = "Next";
+                nextBtn.onclick = () => goToPage(currentPage + 1);
+                container.appendChild(nextBtn);
             }
         }
 
@@ -330,9 +354,9 @@
             iframeDoc.close();
         }
 
-        function renderVideoGrid(videos, clearPrevious = false) {
+        function renderVideoGrid(videos) {
             const feed = document.getElementById('video-feed');
-            if (clearPrevious) feed.innerHTML = '';
+            feed.innerHTML = '';
 
             if (filteredVideosData.length === 0) {
                 feed.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">No videos found.</p>';
@@ -360,8 +384,8 @@
                 `;
                 feed.appendChild(card);
 
-                // Interstitial Safe Ad Placement every 4 items
-                if ((index + 1) % 4 === 0) {
+                // Insert Ad after every 5 videos (1st Ad after 5th item, 2nd Ad after 10th item)
+                if ((index + 1) === 5 || (index + 1) === 10) {
                     const adCard = document.createElement('div');
                     adCard.className = "col-span-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";
                     
@@ -372,7 +396,6 @@
                     adCard.appendChild(adContainer);
                     feed.appendChild(adCard);
 
-                    // Load ad safely without blocking main thread
                     setTimeout(() => {
                         loadAdIntoContainer(adContainer);
                     }, 200);
@@ -509,9 +532,7 @@
         function searchVideos() {
             const query = document.getElementById('search-input').value.toLowerCase();
             filteredVideosData = allVideosData.filter(v => v.title.toLowerCase().includes(query));
-            currentPage = 1;
-            renderVideoGrid(filteredVideosData.slice(0, pageSize), true);
-            toggleLoadMoreButton();
+            goToPage(1);
         }
 
         fetchSettings();
