@@ -121,18 +121,19 @@
                     <script type="text/javascript" src="https://consistinvention.com/a76bfb2ebe9ea649772314d033893a97/invoke.js"></script>
                 </div>
 
-                <div class="relative w-full bg-black flex justify-center items-center min-h-[250px] max-h-[75vh] overflow-hidden">
+                <!-- Modern Video Box -->
+                <div class="relative w-full bg-black flex justify-center items-center min-h-[260px] max-h-[75vh] overflow-hidden rounded-lg shadow-inner">
                     <div id="unlock-overlay" class="absolute inset-0 bg-black/95 z-20 flex flex-col items-center justify-center text-center p-4">
                         <i class="fa-solid fa-lock text-red-500 text-4xl md:text-5xl mb-3 animate-bounce"></i>
                         <h2 class="text-lg md:text-xl font-bold mb-1 text-white">ভিডিওটি প্লে করতে আনলক করুন</h2>
                         <p class="text-gray-400 text-xs md:text-sm mb-5">বিজ্ঞাপনে ক্লিক করে ৫ সেকেন্ড অপেক্ষা করে ভিডিওটি চালু করুন</p>
                         <button id="unlock-btn" onclick="handleUnlock()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition">
-                            <span id="btn-text">Unlock Video (Step 1/2)</span>
+                            <span id="btn-text">Unlock Video</span>
                         </button>
                     </div>
 
                     <iframe id="modal-iframe" class="w-full h-full aspect-video hidden" src="" frameborder="0" allowfullscreen></iframe>
-                    <video id="modal-html5-video" class="responsive-video-player hidden" controls></video>
+                    <video id="modal-html5-video" class="responsive-video-player hidden" controls playsinline controlsList="nodownload"></video>
                 </div>
 
                 <div id="download-container" class="p-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center hidden">
@@ -176,8 +177,9 @@
         let allVideosData = [];
         let filteredVideosData = [];
         let currentPage = 1;
-        const pageSize = 15; // 15 videos per page
+        const pageSize = 15;
         let unlockClickCount = 0;
+        let requiredAdCount = 2; // Dynamic ad requirement per video
         let isTimerRunning = false;
         let selectedCategory = "All";
         let currentVideoEmbedCode = "";
@@ -274,7 +276,6 @@
                 spinner.style.display = 'none';
                 goToPage(1);
                 
-                // Initialize Permanent Bottom Ad
                 const bottomWrapper = document.getElementById('bottom-ad-wrapper');
                 if (bottomWrapper) {
                     loadAdIntoContainer(bottomWrapper);
@@ -291,8 +292,6 @@
             
             renderVideoGrid(currentBatch);
             renderPaginationControls();
-            
-            // Scroll back to top smoothly
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -303,7 +302,6 @@
             const totalPages = Math.ceil(filteredVideosData.length / pageSize);
             if (totalPages <= 1) return;
 
-            // Previous Button
             if (currentPage > 1) {
                 const prevBtn = document.createElement('button');
                 prevBtn.className = "px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-xs md:text-sm font-bold transition";
@@ -312,7 +310,6 @@
                 container.appendChild(prevBtn);
             }
 
-            // Page Numbers
             for (let i = 1; i <= totalPages; i++) {
                 const pageBtn = document.createElement('button');
                 if (i === currentPage) {
@@ -325,7 +322,6 @@
                 container.appendChild(pageBtn);
             }
 
-            // Next Button
             if (currentPage < totalPages) {
                 const nextBtn = document.createElement('button');
                 nextBtn.className = "px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-red-600 hover:text-white text-xs md:text-sm font-bold transition";
@@ -384,7 +380,7 @@
                 `;
                 feed.appendChild(card);
 
-                // Insert Ad after every 5 videos (1st Ad after 5th item, 2nd Ad after 10th item)
+                // Ads after 5th and 10th videos
                 if ((index + 1) === 5 || (index + 1) === 10) {
                     const adCard = document.createElement('div');
                     adCard.className = "col-span-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[120px] my-2";
@@ -403,8 +399,27 @@
             });
         }
 
+        function startDirectPlayback() {
+            document.getElementById('unlock-overlay').style.display = 'none';
+            const iframe = document.getElementById('modal-iframe');
+            const html5Video = document.getElementById('modal-html5-video');
+
+            if (currentVideoEmbedCode.includes('.mp4') || currentVideoEmbedCode.includes('catbox.moe')) {
+                iframe.classList.add('hidden');
+                html5Video.classList.remove('hidden');
+                html5Video.src = currentVideoEmbedCode;
+                html5Video.play();
+            } else {
+                html5Video.classList.add('hidden');
+                iframe.classList.remove('hidden');
+                iframe.src = currentVideoEmbedCode;
+            }
+        }
+
         function openPlayer(video) {
             currentVideoEmbedCode = video.embed_code;
+            requiredAdCount = video.ad_count !== undefined ? parseInt(video.ad_count) : 2;
+
             document.getElementById('modal-iframe').src = "";
             document.getElementById('modal-html5-video').src = "";
             document.getElementById('modal-video-title').innerText = video.title;
@@ -419,10 +434,16 @@
 
             unlockClickCount = 0;
             isTimerRunning = false;
-            document.getElementById('unlock-overlay').style.display = 'flex';
-            document.getElementById('btn-text').innerText = "Unlock Video (Step 1/2)";
-            document.getElementById('unlock-btn').disabled = false;
-            document.getElementById('unlock-btn').className = "bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition cursor-pointer";
+
+            if (requiredAdCount === 0) {
+                // Play without Ads
+                startDirectPlayback();
+            } else {
+                document.getElementById('unlock-overlay').style.display = 'flex';
+                document.getElementById('btn-text').innerText = `Unlock Video (Step 1/${requiredAdCount})`;
+                document.getElementById('unlock-btn').disabled = false;
+                document.getElementById('unlock-btn').className = "bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition cursor-pointer";
+            }
 
             renderRelatedVideos(video.id);
             document.getElementById('player-modal').classList.remove('hidden');
@@ -504,26 +525,12 @@
                     isTimerRunning = false;
                     unlockClickCount++;
 
-                    if (unlockClickCount === 1) {
+                    if (unlockClickCount < requiredAdCount) {
                         btn.disabled = false;
-                        btnText.innerText = "Click Again to Play (Step 2/2)";
+                        btnText.innerText = `Click Again (Step ${unlockClickCount + 1}/${requiredAdCount})`;
                         btn.className = "bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-sm md:text-base transition cursor-pointer";
-                    } else if (unlockClickCount >= 2) {
-                        document.getElementById('unlock-overlay').style.display = 'none';
-
-                        const iframe = document.getElementById('modal-iframe');
-                        const html5Video = document.getElementById('modal-html5-video');
-
-                        if (currentVideoEmbedCode.includes('.mp4') || currentVideoEmbedCode.includes('catbox.moe')) {
-                            iframe.classList.add('hidden');
-                            html5Video.classList.remove('hidden');
-                            html5Video.src = currentVideoEmbedCode;
-                            html5Video.play();
-                        } else {
-                            html5Video.classList.add('hidden');
-                            iframe.classList.remove('hidden');
-                            iframe.src = currentVideoEmbedCode;
-                        }
+                    } else {
+                        startDirectPlayback();
                     }
                 }
             }, 1000);
