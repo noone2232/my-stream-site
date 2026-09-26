@@ -79,7 +79,6 @@
       font-size: 12px;
     }
     
-    /* Login Box Overlay */
     #login-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -115,7 +114,6 @@
       float: right;
     }
 
-    /* Badge & Item List Design */
     .cat-badge {
       display: inline-flex;
       align-items: center;
@@ -154,6 +152,18 @@
       background: #1e293b;
       flex-shrink: 0;
     }
+    .pagination-btn {
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .pagination-btn.active {
+      background: var(--accent-color);
+    }
   </style>
 </head>
 <body>
@@ -190,9 +200,7 @@
       </div>
       <button onclick="addCategory()">Save Category</button>
       
-      <div id="category-list-container" style="margin-top: 15px;">
-        <!-- Dynamic Categories badges will appear here -->
-      </div>
+      <div id="category-list-container" style="margin-top: 15px;"></div>
     </div>
 
     <!-- Site Settings (Notice / Links) -->
@@ -230,11 +238,20 @@
       </div>
       <div class="form-group">
         <label>Embed Code / Player URL *:</label>
-        <input type="text" id="vid-embed" placeholder="https://catbox.moe/c/xxx or iframe code">
+        <input type="text" id="vid-embed" placeholder="https://catbox.moe/c/xxx or streamtape/doodstream url">
       </div>
       <div class="form-group">
-        <label>Thumbnail Image URL *:</label>
+        <label>Thumbnail Image URL (Optional - খালি রাখলে অটো আসবে):</label>
         <input type="text" id="vid-thumb" placeholder="https://i.ibb.co/xxx/image.jpg">
+      </div>
+      <div class="form-group">
+        <label>Ad Requirement (ভিডিও দেখতে কয়টি এড দেখতে হবে):</label>
+        <select id="vid-ad-count">
+          <option value="2">2 Ads (ডিফল্ট - ২টি এড দেখার পর চালু হবে)</option>
+          <option value="1">1 Ad (১টি এড দেখলেই চালু হবে)</option>
+          <option value="3">3 Ads (৩টি এড দেখার পর চালু হবে)</option>
+          <option value="0">0 Ads (কোনো এড ছাড়াই সরাসরি প্লে হবে)</option>
+        </select>
       </div>
       <div class="form-group">
         <label>Direct Download Link (Optional):</label>
@@ -250,24 +267,23 @@
     <!-- All Uploaded Videos (Manage List) -->
     <div class="card">
       <h3>৪. ভিডিও তালিকা ও ম্যানেজমেন্ট (Edit & Delete)</h3>
-      <div id="video-list-container">
-        <!-- Dynamic video list will appear here -->
-      </div>
+      <div id="video-list-container"></div>
+      <!-- Admin Pagination -->
+      <div id="admin-pagination" style="display: flex; justify-content: center; gap: 6px; margin-top: 15px; flex-wrap: wrap;"></div>
     </div>
 
   </div>
 
   <script>
-    // ==========================================
-    // ⚙️ CONFIGURATION & CREDENTIALS
-    // ==========================================
     const SUPABASE_URL = "https://hvrgpkojcukptogznyjf.supabase.co"; 
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2cmdwa29qY3VrcHRvZ3pueWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTMzNjcsImV4cCI6MjEwMjYyOTM2N30.LqHd9lbBdOPVVYC9mo2_ogRP_6adYRT3XY7KbL7hlm0";
-    const ADMIN_PASSWORD = "Hh907$$$"; // 👈 আপনার সিক্রেট পাসওয়ার্ড
+    const ADMIN_PASSWORD = "Hh907$$$";
 
     let supabaseClient = null;
+    let allAdminVideos = [];
+    let currentAdminPage = 1;
+    const adminPageSize = 15;
 
-    // --- Login Logic ---
     function checkAdminPassword() {
       const inputPass = document.getElementById('admin-pass-input').value;
       const errEl = document.getElementById('login-err');
@@ -285,7 +301,6 @@
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('admin-dashboard').style.display = 'block';
       
-      // Init Supabase Client
       if (!supabaseClient) {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       }
@@ -300,12 +315,10 @@
       location.reload();
     }
 
-    // Auto Login Check
     if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
       showDashboard();
     }
 
-    // --- Category Operations (Add, Rename, Delete) ---
     async function loadCategories() {
       if(!supabaseClient) return;
       const { data } = await supabaseClient.from('categories').select('*');
@@ -348,12 +361,17 @@
     async function renameCategory(id, currentName) {
       const newName = prompt('ক্যাটাগরির নতুন নাম লিখুন:', currentName);
       if (newName && newName.trim() !== '' && newName.trim() !== currentName) {
-        const { error } = await supabaseClient.from('categories').update({ name: newName.trim() }).eq('id', id);
-        if (error) alert('Error: ' + error.message);
-        else {
-          alert('ক্যাটাগরির নাম পরিবর্তন করা হয়েছে!');
-          loadCategories();
-        }
+        const trimmedNewName = newName.trim();
+        // Update category name
+        const { error: catErr } = await supabaseClient.from('categories').update({ name: trimmedNewName }).eq('id', id);
+        if (catErr) return alert('Error: ' + catErr.message);
+
+        // Update all related videos with new category name automatically
+        await supabaseClient.from('videos').update({ category: trimmedNewName }).eq('category', currentName);
+
+        alert('ক্যাটাগরির নাম পরিবর্তন করা হয়েছে এবং সব ভিডিওর ক্যাটাগরিও আপডেট হয়েছে!');
+        loadCategories();
+        loadVideos();
       }
     }
 
@@ -365,7 +383,6 @@
       }
     }
 
-    // --- Site Settings Operations ---
     async function loadSettings() {
       if(!supabaseClient) return;
       const { data } = await supabaseClient.from('settings').select('*').eq('id', 1).maybeSingle();
@@ -390,32 +407,31 @@
       else alert('সেটিংস সফলভাবে আপডেট হয়েছে!');
     }
 
-    // --- Video Management (Add, Edit, Update, Delete, List) ---
     async function saveVideo() {
       const editId = document.getElementById('vid-edit-id').value;
       const title = document.getElementById('vid-title').value.trim();
       const category = document.getElementById('vid-category').value;
       const embed = document.getElementById('vid-embed').value.trim();
       const thumb = document.getElementById('vid-thumb').value.trim();
+      const adCount = parseInt(document.getElementById('vid-ad-count').value) || 0;
       const download = document.getElementById('vid-download').value.trim();
 
-      if (!title || !embed || !thumb) return alert('টাইটেল, প্লেয়ার লিংক এবং থাম্বনেইল দেওয়া বাধ্যতামূলক!');
+      if (!title || !embed) return alert('টাইটেল এবং প্লেয়ার লিংক দেওয়া বাধ্যতামূলক!');
 
       const payload = {
         title: title,
         category: category,
         embed_code: embed,
         thumbnail_url: thumb,
+        ad_count: adCount,
         download_link: download
       };
 
       if (editId) {
-        // Update Video
         const { error } = await supabaseClient.from('videos').update(payload).eq('id', editId);
         if (error) alert('Error: ' + error.message);
         else alert('ভিডিও আপডেট করা হয়েছে!');
       } else {
-        // Add New Video
         const { error } = await supabaseClient.from('videos').insert([payload]);
         if (error) alert('Error: ' + error.message);
         else alert('ভিডিও আপলোড করা হয়েছে!');
@@ -428,15 +444,25 @@
     async function loadVideos() {
       if(!supabaseClient) return;
       const { data } = await supabaseClient.from('videos').select('*').order('id', { ascending: false });
+      allAdminVideos = data || [];
+      renderAdminVideosPage(1);
+    }
+
+    function renderAdminVideosPage(page) {
+      currentAdminPage = page;
       const container = document.getElementById('video-list-container');
       container.innerHTML = '';
 
-      if (!data || data.length === 0) {
+      if (allAdminVideos.length === 0) {
         container.innerHTML = '<p style="color: #64748b; font-style: italic;">কোন ভিডিও পাওয়া যায়নি।</p>';
+        document.getElementById('admin-pagination').innerHTML = '';
         return;
       }
 
-      data.forEach(vid => {
+      const start = (currentAdminPage - 1) * adminPageSize;
+      const currentVideos = allAdminVideos.slice(start, start + adminPageSize);
+
+      currentVideos.forEach(vid => {
         const item = document.createElement('div');
         item.className = 'video-item';
         item.innerHTML = `
@@ -444,7 +470,7 @@
             <img src="${vid.thumbnail_url || 'https://via.placeholder.com/50x35'}" class="video-list-thumb" alt="Thumb">
             <div>
               <div style="font-weight: bold; font-size: 14px;">${vid.title}</div>
-              <div style="font-size: 11px; color: #94a3b8;">ক্যাটাগরি: ${vid.category || 'None'}</div>
+              <div style="font-size: 11px; color: #94a3b8;">ক্যাটাগরি: ${vid.category || 'None'} | Ads: ${vid.ad_count ?? 2}</div>
             </div>
           </div>
           <div style="display: flex; gap: 6px; flex-shrink: 0;">
@@ -454,6 +480,40 @@
         `;
         container.appendChild(item);
       });
+
+      renderAdminPagination();
+    }
+
+    function renderAdminPagination() {
+      const container = document.getElementById('admin-pagination');
+      container.innerHTML = '';
+      const totalPages = Math.ceil(allAdminVideos.length / adminPageSize);
+
+      if (totalPages <= 1) return;
+
+      if (currentAdminPage > 1) {
+        const prev = document.createElement('button');
+        prev.className = 'pagination-btn';
+        prev.innerText = 'Prev';
+        prev.onclick = () => renderAdminVideosPage(currentAdminPage - 1);
+        container.appendChild(prev);
+      }
+
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.className = `pagination-btn ${i === currentAdminPage ? 'active' : ''}`;
+        btn.innerText = i;
+        btn.onclick = () => renderAdminVideosPage(i);
+        container.appendChild(btn);
+      }
+
+      if (currentAdminPage < totalPages) {
+        const next = document.createElement('button');
+        next.className = 'pagination-btn';
+        next.innerText = 'Next';
+        next.onclick = () => renderAdminVideosPage(currentAdminPage + 1);
+        container.appendChild(next);
+      }
     }
 
     function startEditVideo(vid) {
@@ -462,13 +522,13 @@
       document.getElementById('vid-category').value = vid.category || '';
       document.getElementById('vid-embed').value = vid.embed_code;
       document.getElementById('vid-thumb').value = vid.thumbnail_url || '';
+      document.getElementById('vid-ad-count').value = vid.ad_count !== undefined ? vid.ad_count : 2;
       document.getElementById('vid-download').value = vid.download_link || '';
 
       document.getElementById('video-form-title').innerText = '৩. ভিডিও এডিট করুন';
       document.getElementById('vid-submit-btn').innerText = 'Update Video';
       document.getElementById('vid-cancel-btn').style.display = 'inline-block';
 
-      // Scroll smoothly to form
       document.getElementById('video-form-card').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -478,6 +538,7 @@
       document.getElementById('vid-category').value = '';
       document.getElementById('vid-embed').value = '';
       document.getElementById('vid-thumb').value = '';
+      document.getElementById('vid-ad-count').value = '2';
       document.getElementById('vid-download').value = '';
 
       document.getElementById('video-form-title').innerText = '৩. নতুন ভিডিও আপলোড / যোগ করুন';
