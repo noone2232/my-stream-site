@@ -185,15 +185,46 @@
         let currentVideoEmbedCode = "";
         let isPlayerOpen = false;
 
+        function cleanUrl(input) {
+            if (!input) return "";
+            const trimmed = input.trim();
+            if (trimmed.includes('<iframe') && trimmed.includes('src=')) {
+                const match = trimmed.match(/src=["'](.*?)["']/i);
+                if (match && match[1]) return match[1].trim();
+            }
+            return trimmed;
+        }
+
         function getAutoThumbnail(embedUrl) {
-            if (!embedUrl) return 'https://via.placeholder.com/640x360?text=No+Thumbnail';
-            if (embedUrl.includes('streamtape')) {
-                const id = embedUrl.split('/e/')[1]?.split('/')[0] || embedUrl.split('/v/')[1]?.split('/')[0];
+            const url = cleanUrl(embedUrl);
+            if (!url) return 'https://via.placeholder.com/640x360?text=No+Thumbnail';
+
+            // Streamtape
+            if (url.includes('streamtape')) {
+                const id = url.split('/e/')[1]?.split('/')[0] || url.split('/v/')[1]?.split('/')[0];
                 return id ? `https://thumb.streamtape.com/image/${id}.png` : 'https://via.placeholder.com/640x360?text=Streamtape+Video';
             }
-            if (embedUrl.includes('dood')) {
-                return 'https://via.placeholder.com/640x360/0f172a/ef4444?text=Play+DoodStream+Video';
+            // DoodStream
+            if (url.includes('dood')) {
+                return 'https://via.placeholder.com/640x360/0f172a/ef4444?text=Play+DoodStream';
             }
+            // Luluvdo
+            if (url.includes('luluvdo')) {
+                return 'https://via.placeholder.com/640x360/0f172a/ef4444?text=Play+Luluvdo';
+            }
+            // XVideos
+            if (url.includes('xvideos.com')) {
+                return 'https://via.placeholder.com/640x360/0f172a/e11d48?text=XVideos+Stream';
+            }
+            // Spankbang
+            if (url.includes('spankbang.com')) {
+                return 'https://via.placeholder.com/640x360/0f172a/e11d48?text=SpankBang+Stream';
+            }
+            // XNXX
+            if (url.includes('xnxx.com')) {
+                return 'https://via.placeholder.com/640x360/0f172a/e11d48?text=XNXX+Stream';
+            }
+
             return 'https://via.placeholder.com/640x360/0f172a/ffffff?text=Play+Video';
         }
 
@@ -404,15 +435,17 @@
             const iframe = document.getElementById('modal-iframe');
             const html5Video = document.getElementById('modal-html5-video');
 
-            if (currentVideoEmbedCode.includes('.mp4') || currentVideoEmbedCode.includes('catbox.moe')) {
+            const playableUrl = cleanUrl(currentVideoEmbedCode);
+
+            if (playableUrl.includes('.mp4') || playableUrl.includes('files.catbox.moe')) {
                 iframe.classList.add('hidden');
                 html5Video.classList.remove('hidden');
-                html5Video.src = currentVideoEmbedCode;
+                html5Video.src = playableUrl;
                 html5Video.play();
             } else {
                 html5Video.classList.add('hidden');
                 iframe.classList.remove('hidden');
-                iframe.src = currentVideoEmbedCode;
+                iframe.src = playableUrl;
             }
         }
 
@@ -436,7 +469,6 @@
             isTimerRunning = false;
 
             if (requiredAdCount === 0) {
-                // Play without Ads
                 startDirectPlayback();
             } else {
                 document.getElementById('unlock-overlay').style.display = 'flex';
